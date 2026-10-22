@@ -1,0 +1,183 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Localhost Multi-View & Webhook Workspace</title>
+  <link rel="stylesheet" href="workspace.css">
+</head>
+<body class="theme-dark">
+  <div class="app-layout">
+    <!-- Top Navigation & Control Toolbar -->
+    <header class="workspace-toolbar">
+      <!-- Left: Logo & View Mode Toggles -->
+      <div class="toolbar-left">
+        <div class="brand">
+          <span class="brand-icon">📐</span>
+          <span class="brand-title">Localhost Multi-View</span>
+        </div>
+        <div class="view-mode-tabs">
+          <button id="tab-view-multiview" class="tab-pill active" title="Responsive Multi-View Workspace">Multi-View</button>
+          <button id="tab-view-webhooks" class="tab-pill" title="Webhook Inspector & Composer">Webhooks</button>
+          <button id="tab-view-split" class="tab-pill" title="Split Multi-View and Webhook side-by-side">Split View</button>
+        </div>
+      </div>
+
+      <!-- Center: Universal URL Bar & Browser Navigation -->
+      <div class="toolbar-center">
+        <div class="nav-controls">
+          <button id="btn-nav-back" class="tool-btn icon-btn" title="Back in all frames">◀</button>
+          <button id="btn-nav-forward" class="tool-btn icon-btn" title="Forward in all frames">▶</button>
+          <button id="btn-nav-reload" class="tool-btn icon-btn" title="Reload all frames (Ctrl+R / Cmd+R)">🔄</button>
+        </div>
+        <div class="url-bar-container">
+          <span class="url-protocol-badge">LOCAL</span>
+          <input type="text" id="universal-url-input" class="url-input" placeholder="http://localhost:3000" value="http://localhost:3000">
+          <button id="btn-nav-go" class="btn btn-primary btn-go">Go</button>
+        </div>
+      </div>
+
+      <!-- Right: Sync Toggles & Responsive Tools -->
+      <div class="toolbar-right">
+        <!-- Master Sync Switch -->
+        <div class="sync-switch-group" title="Toggle event mirroring across frames">
+          <label class="switch">
+            <input type="checkbox" id="toggle-global-sync" checked>
+            <span class="slider"></span>
+          </label>
+          <span class="sync-label" id="sync-status-label">Sync ON</span>
+        </div>
+
+        <!-- Zoom Controls -->
+        <div class="zoom-group">
+          <label for="zoom-select" class="sr-only">Zoom</label>
+          <select id="zoom-select" class="tool-select">
+            <option value="fit" selected>Fit View</option>
+            <option value="1">100%</option>
+            <option value="0.75">75%</option>
+            <option value="0.5">50%</option>
+            <option value="0.33">33%</option>
+          </select>
+        </div>
+
+        <!-- Diagnostic Tools -->
+        <div class="tools-btn-group">
+          <button id="btn-toggle-overflow" class="tool-btn" title="Detect & highlight horizontal overflow elements (red outlines)">
+            <span class="tool-icon">⚠️</span> Overflow
+          </button>
+          <button id="btn-toggle-touch" class="tool-btn" title="Check touch targets < 44px">
+            <span class="tool-icon">👆</span> Touch Target
+          </button>
+          <button id="btn-toggle-hover-sync" class="tool-btn" title="Mirror hover/mouse movements (off by default to avoid noise)">
+            <span class="tool-icon">🖱️</span> Hover
+          </button>
+          <button id="btn-toggle-grid" class="tool-btn" title="Toggle alignment grid overlay">
+            <span class="tool-icon">▦</span> Grid
+          </button>
+          <button id="btn-capture-screenshot" class="tool-btn" title="Capture workspace screenshot">
+            <span class="tool-icon">📷</span> Screenshot
+          </button>
+          <button id="btn-add-viewport" class="tool-btn btn-accent" title="Add another viewport (up to 4)">
+            + Viewport
+          </button>
+        </div>
+      </div>
+    </header>
+
+    <!-- Main Workspace Canvas -->
+    <main class="workspace-main" id="workspace-main">
+      <!-- Grid Overlay (Optional) -->
+      <div id="grid-overlay" class="grid-overlay" style="display: none;"></div>
+
+      <!-- Multi-View Container -->
+      <section id="panel-multiview" class="panel-section active">
+        <div class="viewports-canvas" id="viewports-canvas">
+          <!-- Dynamic Viewport Frames will be inserted here -->
+        </div>
+      </section>
+
+      <!-- Webhook Inspector Container -->
+      <section id="panel-webhooks" class="panel-section">
+        <iframe id="webhook-composer-iframe" src="../webhooks/composer.html" class="webhook-frame" title="Webhook Inspector"></iframe>
+      </section>
+    </main>
+
+    <!-- Bottom Status Bar -->
+    <footer class="workspace-statusbar">
+      <div class="status-left">
+        <span class="status-indicator live"></span>
+        <span id="status-text">Synchronized workspace ready</span>
+        <span class="status-divider">|</span>
+        <span id="origin-indicator" class="text-mono">http://localhost:3000</span>
+      </div>
+      <div class="status-center">
+        <span class="status-hint">💡 Scroll leader to mirror height percentage • Click or type in any frame to sync state</span>
+      </div>
+      <div class="status-right">
+        <span id="dnr-status-badge" class="badge-pill badge-green" title="DNR session rules active removing X-Frame-Options for localhost frames">DNR Embed Active</span>
+        <button id="btn-reset-layout" class="btn-link" title="Reset frames to default Trio">Reset Trio</button>
+      </div>
+    </footer>
+  </div>
+
+  <!-- Template for Viewport Frame Card -->
+  <template id="viewport-card-template">
+    <div class="viewport-card" data-frame-id="">
+      <!-- Viewport Header Controls -->
+      <div class="viewport-header">
+        <div class="viewport-title-group">
+          <select class="device-preset-select form-control-sm"></select>
+          <span class="device-dimensions-label">393 × 852</span>
+          <span class="breakpoint-badge" title="Active CSS Breakpoint">Tailwind: sm</span>
+        </div>
+        <div class="viewport-actions-group">
+          <!-- Frame Mode: Sync / Lead / Follow / Independent -->
+          <select class="frame-mode-select form-control-sm" title="Frame sync mode">
+            <option value="sync" selected>Sync (All)</option>
+            <option value="lead">Lead Only</option>
+            <option value="follow">Follow Only</option>
+            <option value="independent">Independent</option>
+          </select>
+          <!-- Orientation toggle -->
+          <button class="icon-btn btn-rotate" title="Rotate (Portrait / Landscape)">🔄</button>
+          <!-- Per-frame Reload -->
+          <button class="icon-btn btn-reload-frame" title="Reload this frame">↻</button>
+          <!-- Remove frame -->
+          <button class="icon-btn btn-remove-frame" title="Close this viewport">✕</button>
+        </div>
+      </div>
+
+      <!-- Mismatch & Diagnostic Alert Banner -->
+      <div class="viewport-alert-banner" style="display: none;">
+        <span class="alert-icon">⚠️</span>
+        <span class="alert-text">Element not found or hidden in this viewport</span>
+        <button class="alert-dismiss">✕</button>
+      </div>
+
+      <!-- Overflow Culprits Strip -->
+      <div class="overflow-culprit-strip" style="display: none;">
+        <span class="overflow-label">Horizontal Overflow:</span>
+        <span class="overflow-culprit-list"></span>
+      </div>
+
+      <!-- Scaled Frame Outer Container -->
+      <div class="frame-scaler-container">
+        <!-- Frame Bezel Box -->
+        <div class="frame-bezel">
+          <!-- Cert Error Guidance Banner (shown if localhost https cert is untrusted) -->
+          <div class="cert-guidance-card" style="display: none;">
+            <h3>Untrusted HTTPS Certificate</h3>
+            <p>If this frame is blank, your local server uses a self-signed SSL certificate that Chrome blocks in iframes.</p>
+            <button class="btn btn-secondary btn-sm btn-open-tab">Open in New Tab & Accept Certificate</button>
+          </div>
+
+          <!-- The embedded localhost iframe -->
+          <iframe class="app-iframe" sandbox="allow-scripts allow-forms allow-same-origin allow-modals allow-popups" title="Localhost Viewport"></iframe>
+        </div>
+      </div>
+    </div>
+  </template>
+
+  <script type="module" src="workspace.js"></script>
+</body>
+</html>

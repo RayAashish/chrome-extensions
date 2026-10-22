@@ -1,0 +1,38 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 128 128" width="128" height="128">
+  <defs>
+    <linearGradient id="bgGrad" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#0f172a" />
+      <stop offset="100%" stop-color="#1e293b" />
+    </linearGradient>
+    <linearGradient id="screenGrad" x1="0%" y1="0%" x2="0%" y2="100%">
+      <stop offset="0%" stop-color="#38bdf8" />
+      <stop offset="100%" stop-color="#2563eb" />
+    </linearGradient>
+    <linearGradient id="boltGrad" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#fbbf24" />
+      <stop offset="100%" stop-color="#f59e0b" />
+    </linearGradient>
+  </defs>
+
+  <!-- Extension Icon Background -->
+  <rect x="4" y="4" width="120" height="120" rx="26" fill="url(#bgGrad)" stroke="#334155" stroke-width="4"/>
+
+  <!-- Desktop Viewport -->
+  <rect x="18" y="24" width="92" height="54" rx="6" fill="#1e293b" stroke="#475569" stroke-width="2.5" />
+  <rect x="22" y="28" width="84" height="42" rx="3" fill="#0f172a" />
+  <rect x="52" y="78" width="24" height="6" rx="2" fill="#475569" />
+  <rect x="44" y="84" width="40" height="4" rx="2" fill="#334155" />
+
+  <!-- Mobile Viewport (Foreground left) -->
+  <rect x="24" y="48" width="26" height="50" rx="4" fill="#0f172a" stroke="#38bdf8" stroke-width="2.5" />
+  <circle cx="37" cy="52" r="1.5" fill="#38bdf8" />
+  <rect x="27" y="56" width="20" height="34" rx="2" fill="#1e293b" />
+
+  <!-- Tablet Viewport (Foreground center/right) -->
+  <rect x="56" y="42" width="44" height="58" rx="5" fill="#0f172a" stroke="#60a5fa" stroke-width="2.5" />
+  <circle cx="78" cy="46" r="1.5" fill="#60a5fa" />
+  <rect x="60" y="50" width="36" height="44" rx="2" fill="#1e293b" />
+
+  <!-- Webhook Lightning Bolt Symbol -->
+  <polygon points="90,14 74,38 86,38 78,56 102,30 90,30" fill="url(#boltGrad)" stroke="#b45309" stroke-width="1.5" />
+</svg>

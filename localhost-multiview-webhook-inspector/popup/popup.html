@@ -1,0 +1,55 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>Localhost Multi-View & Webhooks</title>
+  <link rel="stylesheet" href="popup.css">
+</head>
+<body>
+  <div class="popup-container">
+    <header class="popup-header">
+      <div class="header-brand">
+        <span class="icon">📐</span>
+        <div>
+          <h1>Localhost Multi-View</h1>
+          <span class="subtitle">& Webhook Inspector</span>
+        </div>
+      </div>
+      <span class="privacy-badge">100% Local</span>
+    </header>
+
+    <div class="status-card" id="status-card">
+      <div class="status-top">
+        <span class="status-dot" id="status-dot"></span>
+        <span class="status-title" id="status-title">Detecting Tab...</span>
+      </div>
+      <div class="status-url" id="status-url">-</div>
+      <div class="status-desc" id="status-desc"></div>
+    </div>
+
+    <div class="action-buttons">
+      <button id="btn-launch-multiview" class="btn btn-primary">
+        🚀 Launch Multi-View Workspace
+      </button>
+      <button id="btn-open-webhooks" class="btn btn-secondary">
+        ⚡ Open Webhook Inspector
+      </button>
+    </div>
+
+    <div class="quick-port-section">
+      <label for="custom-port-input">Or enter local dev URL:</label>
+      <div class="port-input-group">
+        <input type="text" id="custom-port-input" class="form-control" placeholder="http://localhost:3000" value="http://localhost:3000">
+        <button id="btn-go-custom" class="btn btn-sm btn-outline">Go</button>
+      </div>
+    </div>
+
+    <footer class="popup-footer">
+      <div class="shortcut-tip">Shortcut: <kbd>Cmd+Shift+L</kbd> / <kbd>Ctrl+Shift+L</kbd></div>
+      <a href="../options/options.html" target="_blank" class="options-link">Settings ⚙️</a>
+    </footer>
+  </div>
+
+  <script type="module" src="popup.js"></script>
+</body>
+</html>

@@ -1,0 +1,64 @@
+{
+  "manifest_version": 3,
+  "name": "Smart PII Sanitizer",
+  "version": "1.0.0",
+  "description": "Zero-network, deterministic, structure-preserving local PII & secret sanitizer with reverse-mapping for AI chatbots.",
+  "icons": {
+    "16": "icons/icon16.png",
+    "32": "icons/icon32.png",
+    "48": "icons/icon48.png",
+    "128": "icons/icon128.png"
+  },
+  "permissions": [
+    "storage",
+    "sidePanel",
+    "contextMenus",
+    "scripting"
+  ],
+  "optional_host_permissions": [
+    "https://chatgpt.com/*",
+    "https://*.claude.ai/*",
+    "https://gemini.google.com/*",
+    "https://copilot.microsoft.com/*",
+    "https://www.perplexity.ai/*",
+    "https://chat.deepseek.com/*",
+    "https://grok.com/*"
+  ],
+  "action": {
+    "default_popup": "popup/popup.html",
+    "default_title": "Smart PII Sanitizer",
+    "default_icon": {
+      "16": "icons/icon16.png",
+      "32": "icons/icon32.png",
+      "48": "icons/icon48.png",
+      "128": "icons/icon128.png"
+    }
+  },
+  "side_panel": {
+    "default_path": "sidepanel/sidepanel.html"
+  },
+  "options_page": "options/options.html",
+  "background": {
+    "service_worker": "background/service-worker.js",
+    "type": "module"
+  },
+  "commands": {
+    "sanitize_selection": {
+      "suggested_key": {
+        "default": "Ctrl+Shift+S",
+        "mac": "Command+Shift+S"
+      },
+      "description": "Sanitize selection and copy to clipboard"
+    },
+    "reverse_map_selection": {
+      "suggested_key": {
+        "default": "Ctrl+Shift+R",
+        "mac": "Command+Shift+R"
+      },
+      "description": "Reverse-map selection from vault"
+    },
+    "_execute_side_panel": {
+      "description": "Open the Smart PII Sanitizer side panel"
+    }
+  }
+}

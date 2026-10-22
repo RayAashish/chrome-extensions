@@ -1,0 +1,918 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Smart PII Sanitizer - Standalone Web App</title>
+  <style>
+    :root {
+      --bg-primary: #0f172a;
+      --bg-secondary: #1e293b;
+      --bg-tertiary: #334155;
+      --text-primary: #f8fafc;
+      --text-secondary: #94a3b8;
+      --text-muted: #64748b;
+      --accent: #3b82f6;
+      --accent-hover: #2563eb;
+      --accent-emerald: #10b981;
+      --danger: #ef4444;
+      --danger-hover: #dc2626;
+      --warning: #f59e0b;
+      --border: #334155;
+      --border-focus: #3b82f6;
+      --font-mono: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace;
+      --radius-sm: 6px;
+      --radius-md: 8px;
+    }
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+      background-color: var(--bg-primary);
+      color: var(--text-primary);
+      line-height: 1.5;
+      padding: 24px;
+      display: flex;
+      justify-content: center;
+      min-height: 100vh;
+    }
+    .container {
+      width: 100%;
+      max-width: 920px;
+      display: flex;
+      flex-direction: column;
+      gap: 16px;
+    }
+    header {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      border-bottom: 1px solid var(--border);
+      padding-bottom: 16px;
+    }
+    .brand {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+    }
+    h1 { font-size: 20px; font-weight: 700; }
+    .offline-badge {
+      background: rgba(16, 185, 129, 0.15);
+      color: #10b981;
+      border: 1px solid rgba(16, 185, 129, 0.3);
+      padding: 3px 10px;
+      border-radius: 12px;
+      font-size: 11px;
+      font-weight: 600;
+    }
+    .tabs {
+      display: flex;
+      border-bottom: 1px solid var(--border);
+      gap: 8px;
+    }
+    .tab-btn {
+      background: transparent;
+      border: none;
+      border-bottom: 2px solid transparent;
+      color: var(--text-secondary);
+      padding: 10px 16px;
+      font-size: 14px;
+      font-weight: 600;
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      gap: 6px;
+    }
+    .tab-btn.active {
+      color: var(--accent);
+      border-bottom-color: var(--accent);
+    }
+    .tab-content { display: none; flex-direction: column; gap: 14px; }
+    .tab-content.active { display: flex; }
+    .field-group { display: flex; flex-direction: column; gap: 6px; }
+    .field-header { display: flex; justify-content: space-between; align-items: center; }
+    .field-label-group { display: flex; align-items: center; gap: 8px; }
+    label { font-size: 13px; font-weight: 600; color: var(--text-secondary); }
+    .badge-out-of-date {
+      background: rgba(245, 158, 11, 0.2);
+      border: 1px solid var(--warning);
+      color: #fcd34d;
+      font-size: 10px;
+      font-weight: 700;
+      padding: 1px 6px;
+      border-radius: 4px;
+      text-transform: uppercase;
+      letter-spacing: 0.4px;
+    }
+    .badge-out-of-date.hidden { display: none; }
+    .field-actions { display: flex; align-items: center; gap: 6px; }
+
+    /* Compact Icon Buttons */
+    .icon-btn-sm {
+      width: 28px;
+      height: 28px;
+      border-radius: var(--radius-sm);
+      border: 1px solid var(--border);
+      background-color: var(--bg-tertiary);
+      color: var(--text-secondary);
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      cursor: pointer;
+      transition: all 0.15s ease;
+    }
+    .icon-btn-sm:hover {
+      background-color: var(--border);
+      color: var(--text-primary);
+    }
+    .copy-btn.copied {
+      border-color: var(--accent-emerald);
+      background-color: rgba(16, 185, 129, 0.15);
+      color: var(--accent-emerald);
+    }
+
+    /* Mirrored-Overlay Container */
+    .editor-container {
+      position: relative;
+      width: 100%;
+      min-height: 140px;
+      border: 1px solid var(--border);
+      border-radius: var(--radius-md);
+      background-color: var(--bg-secondary);
+      overflow: hidden;
+      transition: border-color 0.15s ease, opacity 0.2s ease;
+    }
+    .editor-container:focus-within { border-color: var(--border-focus); }
+    .editor-container.out-of-date { opacity: 0.65; filter: grayscale(0.25); }
+    .editor-backdrop {
+      position: absolute;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
+      padding: 12px;
+      font-family: var(--font-mono);
+      font-size: 13px;
+      line-height: 1.5;
+      white-space: pre-wrap;
+      word-wrap: break-word;
+      overflow-y: scroll;
+      color: transparent;
+      pointer-events: none;
+      user-select: none;
+      box-sizing: border-box;
+      z-index: 1;
+    }
+    .editor-backdrop::-webkit-scrollbar { width: 8px; visibility: hidden; }
+    .editor-container textarea {
+      position: relative;
+      width: 100%;
+      height: 100%;
+      min-height: 140px;
+      border: none;
+      background: transparent;
+      color: var(--text-primary);
+      font-family: var(--font-mono);
+      font-size: 13px;
+      line-height: 1.5;
+      padding: 12px;
+      resize: vertical;
+      outline: none;
+      overflow-y: scroll;
+      z-index: 2;
+      box-sizing: border-box;
+    }
+
+    /* Highlight Spans */
+    .hl-span { border-radius: 3px; padding: 1px 0; }
+    .hl-secret { background-color: rgba(239, 68, 68, 0.4); border-bottom: 2px solid #ef4444; }
+    .hl-id { background-color: rgba(248, 113, 113, 0.28); border-bottom: 2px solid #f87171; }
+    .hl-network { background-color: rgba(245, 158, 11, 0.3); border-bottom: 2px solid #f59e0b; }
+    .hl-placeholder { background-color: rgba(59, 130, 246, 0.25); border-bottom: 2px solid #3b82f6; }
+    .hl-restored { background-color: rgba(16, 185, 129, 0.3); border-bottom: 2px solid #10b981; }
+
+    /* Red Sensitive Flagging Banner */
+    .summary-bar {
+      background: var(--bg-secondary);
+      border: 1px solid var(--border);
+      border-radius: var(--radius-md);
+      padding: 10px 14px;
+      display: flex;
+      flex-direction: column;
+      gap: 8px;
+    }
+    .summary-bar.summary-red {
+      background: rgba(239, 68, 68, 0.1);
+      border: 1px solid rgba(239, 68, 68, 0.45);
+    }
+    .summary-header { display: flex; align-items: center; gap: 7px; color: #f87171; font-weight: 700; font-size: 13px; }
+    .entity-badges { display: flex; flex-wrap: wrap; gap: 6px; }
+    .entity-badge {
+      border-radius: 4px;
+      padding: 3px 8px;
+      font-size: 11px;
+      font-weight: 600;
+      cursor: pointer;
+      display: inline-flex;
+      align-items: center;
+      gap: 5px;
+    }
+    .badge-severity-high { background-color: var(--danger); color: #fff; border: 1px solid var(--danger-hover); }
+    .badge-severity-medium { background-color: rgba(239, 68, 68, 0.12); color: #f87171; border: 1px solid var(--danger); }
+    .badge-severity-low { background-color: rgba(245, 158, 11, 0.15); color: #fcd34d; border: 1px solid var(--warning); }
+    .badge-toggle-btn { background: transparent; border: none; color: inherit; font-size: 12px; font-weight: 700; cursor: pointer; }
+    .entity-badge.excluded { opacity: 0.45; text-decoration: line-through; }
+
+    /* Residual Scan Banner */
+    .residual-banner {
+      border-radius: var(--radius-md);
+      padding: 8px 12px;
+      font-size: 12px;
+      font-weight: 600;
+      display: flex;
+      align-items: center;
+      gap: 7px;
+    }
+    .residual-banner.warning-red {
+      background-color: rgba(239, 68, 68, 0.18);
+      border: 1px solid var(--danger);
+      color: #fca5a5;
+    }
+    .residual-banner.clean-green {
+      background-color: rgba(16, 185, 129, 0.15);
+      border: 1px solid var(--accent-emerald);
+      color: #6ee7b7;
+    }
+    .residual-banner.hidden { display: none; }
+
+    .btn-row { display: flex; justify-content: flex-end; gap: 8px; }
+    .btn {
+      background: var(--accent);
+      color: #fff;
+      border: none;
+      padding: 8px 18px;
+      border-radius: 6px;
+      font-weight: 600;
+      cursor: pointer;
+      font-size: 13px;
+    }
+    .btn:hover { background: var(--accent-hover); }
+
+    .status-banner {
+      background: rgba(16, 185, 129, 0.1);
+      border: 1px solid var(--accent-emerald);
+      color: #6ee7b7;
+      border-radius: var(--radius-md);
+      padding: 8px 12px;
+      font-size: 12px;
+      font-weight: 500;
+    }
+    .status-banner.warning {
+      background: rgba(239, 68, 68, 0.15);
+      border-color: var(--danger);
+      color: #fca5a5;
+    }
+    .status-banner.hidden { display: none; }
+
+    .reverse-chips { display: flex; flex-wrap: wrap; gap: 6px; }
+    .reverse-chip {
+      background: var(--bg-secondary);
+      border: 1px solid var(--border);
+      border-radius: 4px;
+      padding: 3px 8px;
+      font-size: 11px;
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+    }
+    .reverse-chip.unmatched {
+      border-color: var(--danger);
+      background: rgba(239, 68, 68, 0.1);
+      color: #fca5a5;
+    }
+    .reverse-chip .masked-val { cursor: pointer; font-family: var(--font-mono); color: var(--text-muted); }
+    .reverse-chip .masked-val.revealed { color: var(--text-primary); }
+    .hint-text { font-style: italic; color: var(--warning); font-size: 10px; }
+
+    .vault-table {
+      width: 100%;
+      border-collapse: collapse;
+      font-size: 12px;
+      background: var(--bg-secondary);
+      border: 1px solid var(--border);
+      border-radius: 8px;
+      overflow: hidden;
+    }
+    .vault-table th, .vault-table td {
+      padding: 10px 12px;
+      text-align: left;
+      border-bottom: 1px solid var(--border);
+      font-family: var(--font-mono);
+    }
+    .vault-table th { background: var(--bg-tertiary); color: var(--text-secondary); }
+    .masked-real { cursor: pointer; color: var(--text-muted); }
+    .masked-real.revealed { color: var(--text-primary); }
+
+    footer {
+      border-top: 1px solid var(--border);
+      padding-top: 12px;
+      text-align: center;
+      font-size: 11px;
+      color: var(--text-muted);
+    }
+
+    .toast {
+      position: fixed;
+      bottom: 24px;
+      left: 50%;
+      transform: translateX(-50%);
+      background-color: var(--bg-secondary);
+      color: var(--text-primary);
+      border: 1px solid var(--accent-emerald);
+      box-shadow: 0 4px 14px rgba(0, 0, 0, 0.35);
+      padding: 6px 14px;
+      border-radius: 20px;
+      font-size: 12px;
+      font-weight: 600;
+      z-index: 100;
+      pointer-events: none;
+      transition: opacity 0.2s ease;
+    }
+    .toast.hidden { opacity: 0; pointer-events: none; }
+    .hidden { display: none !important; }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <header>
+      <div class="brand">
+        <svg viewBox="0 0 128 128" width="28" height="28" aria-hidden="true">
+          <path d="M64 12 C96 12 112 28 112 56 C112 88 84 112 64 120 C44 112 16 88 16 56 C16 28 32 12 64 12 Z" fill="#3b82f6"/>
+          <rect x="42" y="56" width="44" height="34" rx="6" fill="#ffffff"/>
+          <path d="M50 56 V44 C50 36.268 56.268 30 64 30 C71.732 30 78 36.268 78 44 V56" fill="none" stroke="#ffffff" stroke-width="7" stroke-linecap="round"/>
+          <circle cx="64" cy="70" r="4.5" fill="#10b981"/>
+        </svg>
+        <h1>Smart PII Sanitizer (Standalone)</h1>
+      </div>
+      <span class="offline-badge">100% Local / Zero Network</span>
+    </header>
+
+    <div class="tabs">
+      <button class="tab-btn active" data-tab="tabSanitize">Sanitize</button>
+      <button class="tab-btn" data-tab="tabReverse">Reverse Map</button>
+      <button class="tab-btn" data-tab="tabVault">Vault (<span id="vaultCount">0</span>)</button>
+    </div>
+
+    <!-- SANITIZE TAB -->
+    <div id="tabSanitize" class="tab-content active">
+      <div id="liveSummary" class="summary-bar summary-red hidden">
+        <div class="summary-header">
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" aria-hidden="true">
+            <path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"/>
+            <line x1="12" y1="9" x2="12" y2="13"/>
+            <line x1="12" y1="17" x2="12.01" y2="17"/>
+          </svg>
+          <span id="summaryText">Scanning...</span>
+        </div>
+        <div id="entityBadges" class="entity-badges"></div>
+      </div>
+
+      <div class="field-group">
+        <div class="field-header">
+          <div class="field-label-group">
+            <label for="rawInput">Input (Raw Text, Logs, SQL, JSON)</label>
+            <span id="outOfDateBadge" class="badge-out-of-date hidden">Out of date</span>
+          </div>
+          <div class="field-actions">
+            <button id="pasteRawBtn" class="icon-btn-sm" title="Paste from clipboard">
+              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                <path d="M16 4h2a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2V6a2 2 0 0 1 2-2h2"/>
+                <rect x="8" y="2" width="8" height="4" rx="1" ry="1"/>
+              </svg>
+            </button>
+            <button id="clearRawBtn" class="icon-btn-sm" title="Clear input">
+              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                <polyline points="3 6 5 6 21 6"/><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/>
+              </svg>
+            </button>
+          </div>
+        </div>
+        <div class="editor-container">
+          <div id="rawBackdrop" class="editor-backdrop" aria-hidden="true"></div>
+          <textarea id="rawInput" placeholder="Paste sensitive text here..."></textarea>
+        </div>
+      </div>
+
+      <div class="btn-row">
+        <button id="sanitizeBtn" class="btn">Sanitize Now</button>
+      </div>
+
+      <!-- Residual Alert Banner -->
+      <div id="residualAlert" class="residual-banner hidden"></div>
+
+      <div class="field-group">
+        <div class="field-header">
+          <label for="sanitizedOutput">Output (Deterministic Dummy Tokens)</label>
+          <div class="field-actions">
+            <button id="copySanitizedBtn" class="icon-btn-sm copy-btn" title="Copy sanitized text">
+              <svg class="copy-icon" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                <rect x="9" y="9" width="13" height="13" rx="2" ry="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/>
+              </svg>
+              <svg class="check-icon hidden" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#10b981" stroke-width="2.5">
+                <polyline points="20 6 9 17 4 12"/>
+              </svg>
+            </button>
+          </div>
+        </div>
+        <div class="editor-container">
+          <div id="sanitizedBackdrop" class="editor-backdrop" aria-hidden="true"></div>
+          <textarea id="sanitizedOutput" readonly placeholder="Sanitized output will appear here..."></textarea>
+        </div>
+      </div>
+    </div>
+
+    <!-- REVERSE TAB -->
+    <div id="tabReverse" class="tab-content">
+      <div class="field-group">
+        <div class="field-header">
+          <div class="field-label-group">
+            <label for="aiReplyInput">AI Chat Response (With Dummy Tokens)</label>
+            <span id="reverseOutOfDateBadge" class="badge-out-of-date hidden">Out of date</span>
+          </div>
+          <div class="field-actions">
+            <button id="pasteAiBtn" class="icon-btn-sm" title="Paste AI reply">
+              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                <path d="M16 4h2a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2V6a2 2 0 0 1 2-2h2"/>
+                <rect x="8" y="2" width="8" height="4" rx="1" ry="1"/>
+              </svg>
+            </button>
+            <button id="clearAiBtn" class="icon-btn-sm" title="Clear AI reply">
+              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                <polyline points="3 6 5 6 21 6"/><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/>
+              </svg>
+            </button>
+          </div>
+        </div>
+        <div class="editor-container">
+          <div id="aiBackdrop" class="editor-backdrop" aria-hidden="true"></div>
+          <textarea id="aiReplyInput" placeholder="Paste AI chatbot response containing user_A@example.com, REDACTED_KEY_1, 10.0.0.1..."></textarea>
+        </div>
+      </div>
+
+      <div class="btn-row">
+        <button id="reverseBtn" class="btn">Reverse Map</button>
+      </div>
+
+      <div id="reverseStatusBanner" class="status-banner hidden"></div>
+      <div id="reverseChips" class="reverse-chips hidden"></div>
+
+      <div class="field-group">
+        <div class="field-header">
+          <label for="restoredOutput">Restored Output (Original Real Values)</label>
+          <div class="field-actions">
+            <button id="copyRestoredBtn" class="icon-btn-sm copy-btn" title="Copy restored text">
+              <svg class="copy-icon" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                <rect x="9" y="9" width="13" height="13" rx="2" ry="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/>
+              </svg>
+              <svg class="check-icon hidden" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#10b981" stroke-width="2.5">
+                <polyline points="20 6 9 17 4 12"/>
+              </svg>
+            </button>
+          </div>
+        </div>
+        <div class="editor-container">
+          <div id="restoredBackdrop" class="editor-backdrop" aria-hidden="true"></div>
+          <textarea id="restoredOutput" readonly placeholder="Restored original text will appear here..."></textarea>
+        </div>
+      </div>
+    </div>
+
+    <!-- VAULT TAB -->
+    <div id="tabVault" class="tab-content">
+      <div class="btn-row" style="margin-bottom: 8px;">
+        <button id="clearVaultBtn" class="btn-sm" style="color: #f87171;">Clear Vault</button>
+      </div>
+      <table class="vault-table">
+        <thead>
+          <tr>
+            <th>Placeholder</th>
+            <th>Original Real Value (Click to reveal)</th>
+            <th>Type</th>
+          </tr>
+        </thead>
+        <tbody id="vaultBody">
+          <tr><td colspan="3" style="text-align:center; color:#64748b;">Vault is empty.</td></tr>
+        </tbody>
+      </table>
+    </div>
+
+    <footer>
+      Automated detection can miss things. Review before sending.
+    </footer>
+  </div>
+
+  <div id="toast" class="toast hidden"></div>
+
+  <script type="module">
+    import { sanitize } from './core/sanitizer.js';
+    import { reverseMap } from './core/reverse.js';
+    import { Vault } from './core/vault.js';
+
+    const vault = new Vault();
+    const excludedEntityIds = new Set();
+    let lastSanitizedInput = null;
+    let lastReversedAiInput = null;
+
+    const rawInput = document.getElementById('rawInput');
+    const rawBackdrop = document.getElementById('rawBackdrop');
+    const sanitizedOutput = document.getElementById('sanitizedOutput');
+    const sanitizedBackdrop = document.getElementById('sanitizedBackdrop');
+    const outOfDateBadge = document.getElementById('outOfDateBadge');
+
+    const sanitizeBtn = document.getElementById('sanitizeBtn');
+    const copySanitizedBtn = document.getElementById('copySanitizedBtn');
+    const pasteRawBtn = document.getElementById('pasteRawBtn');
+    const clearRawBtn = document.getElementById('clearRawBtn');
+
+    const liveSummary = document.getElementById('liveSummary');
+    const summaryText = document.getElementById('summaryText');
+    const entityBadges = document.getElementById('entityBadges');
+    const residualAlert = document.getElementById('residualAlert');
+
+    const aiReplyInput = document.getElementById('aiReplyInput');
+    const aiBackdrop = document.getElementById('aiBackdrop');
+    const restoredOutput = document.getElementById('restoredOutput');
+    const restoredBackdrop = document.getElementById('restoredBackdrop');
+    const reverseOutOfDateBadge = document.getElementById('reverseOutOfDateBadge');
+
+    const reverseBtn = document.getElementById('reverseBtn');
+    const copyRestoredBtn = document.getElementById('copyRestoredBtn');
+    const pasteAiBtn = document.getElementById('pasteAiBtn');
+    const clearAiBtn = document.getElementById('clearAiBtn');
+    const reverseStatusBanner = document.getElementById('reverseStatusBanner');
+    const reverseChips = document.getElementById('reverseChips');
+
+    const vaultCount = document.getElementById('vaultCount');
+    const vaultBody = document.getElementById('vaultBody');
+    const clearVaultBtn = document.getElementById('clearVaultBtn');
+    const toast = document.getElementById('toast');
+
+    function escapeHtml(t) {
+      if (!t) return '';
+      return t.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;');
+    }
+
+    function syncScroll(ta, bd) {
+      if (!bd) return;
+      bd.scrollTop = ta.scrollTop;
+      bd.scrollLeft = ta.scrollLeft;
+    }
+
+    function renderMirrored(text, spans, bd) {
+      if (!bd) return;
+      if (!text) { bd.innerHTML = ''; return; }
+      if (text.length > 120000 || (spans && spans.length > 300)) {
+        const safeSpans = (spans || []).slice(0, 150);
+        renderPartialMirrored(text, safeSpans, bd, true);
+        return;
+      }
+      if (!spans || !spans.length) { bd.innerHTML = escapeHtml(text) + '\n'; return; }
+      renderPartialMirrored(text, spans, bd, false);
+    }
+
+    function renderPartialMirrored(text, spans, bd, isTruncated = false) {
+      const sorted = [...spans].sort((a, b) => a.start - b.start);
+      let html = '';
+      let cursor = 0;
+      for (const s of sorted) {
+        if (s.start > cursor) html += escapeHtml(text.slice(cursor, s.start));
+        html += `<mark class="hl-span ${s.hlClass || 'hl-secret'}">${escapeHtml(text.slice(s.start, s.end))}</mark>`;
+        cursor = s.end;
+      }
+      if (cursor < text.length) {
+        if (isTruncated && text.length - cursor > 15000) {
+          html += escapeHtml(text.slice(cursor, cursor + 15000)) + '\n...';
+        } else {
+          html += escapeHtml(text.slice(cursor));
+        }
+      }
+      bd.innerHTML = html + '\n';
+    }
+
+    // Scroll listeners
+    rawInput.addEventListener('scroll', () => syncScroll(rawInput, rawBackdrop));
+    sanitizedOutput.addEventListener('scroll', () => syncScroll(sanitizedOutput, sanitizedBackdrop));
+    aiReplyInput.addEventListener('scroll', () => syncScroll(aiReplyInput, aiBackdrop));
+    restoredOutput.addEventListener('scroll', () => syncScroll(restoredOutput, restoredBackdrop));
+
+    // Live preview
+    let debounceTimer = null;
+    rawInput.addEventListener('input', () => {
+      if (lastSanitizedInput !== null && rawInput.value !== lastSanitizedInput) {
+        outOfDateBadge.classList.remove('hidden');
+        sanitizedOutput.parentElement.classList.add('out-of-date');
+      } else {
+        outOfDateBadge.classList.add('hidden');
+        sanitizedOutput.parentElement.classList.remove('out-of-date');
+      }
+      clearTimeout(debounceTimer);
+      const text = rawInput.value;
+      if (text.length > 80000) {
+        const lineCount = (text.match(/\n/g) || []).length + 1;
+        liveSummary.classList.remove('hidden');
+        liveSummary.className = 'summary-bar';
+        liveSummary.style.borderColor = '#3b82f6';
+        summaryText.innerHTML = `⚡ <strong>Large Code Detected:</strong> ${lineCount.toLocaleString()} lines (${(text.length / 1024).toFixed(1)} KB). High-Performance Mode active. Click <strong>"Sanitize Now"</strong> to process.`;
+        entityBadges.innerHTML = '';
+        rawBackdrop.innerHTML = '';
+        return;
+      }
+      debounceTimer = setTimeout(runLivePreview, 200);
+    });
+
+    aiReplyInput.addEventListener('input', () => {
+      if (lastReversedAiInput !== null && aiReplyInput.value !== lastReversedAiInput) {
+        reverseOutOfDateBadge.classList.remove('hidden');
+        restoredOutput.parentElement.classList.add('out-of-date');
+      } else {
+        reverseOutOfDateBadge.classList.add('hidden');
+        restoredOutput.parentElement.classList.remove('out-of-date');
+      }
+    });
+
+    function runLivePreview() {
+      const text = rawInput.value;
+      if (!text.trim()) {
+        liveSummary.classList.add('hidden');
+        rawBackdrop.innerHTML = '';
+        return;
+      }
+
+      if (text.length > 80000) return;
+
+      const preview = sanitize(text, { vault: new Vault(), excludedEntityIds: Array.from(excludedEntityIds) });
+      const spans = preview.entities.map(e => ({
+        start: e.start,
+        end: e.end,
+        hlClass: e.category === 'SECRETS' ? 'hl-secret' : (['EMAIL','CONTACT','ID_CARDS','FINANCIAL'].includes(e.category) ? 'hl-id' : 'hl-network')
+      }));
+      renderMirrored(text, spans, rawBackdrop);
+
+      if (preview.stats.total === 0) {
+        liveSummary.classList.remove('hidden');
+        liveSummary.className = 'summary-bar';
+        liveSummary.style.borderColor = '';
+        summaryText.textContent = 'No sensitive data detected in input.';
+        entityBadges.innerHTML = '';
+        return;
+      }
+
+      liveSummary.classList.remove('hidden');
+      liveSummary.className = 'summary-bar summary-red';
+      liveSummary.style.borderColor = '';
+      summaryText.textContent = `Found ${preview.stats.total} sensitive item(s):`;
+      entityBadges.innerHTML = '';
+
+      const maxBadges = 40;
+      preview.entities.slice(0, maxBadges).forEach(e => {
+        const badge = document.createElement('span');
+        const isEx = excludedEntityIds.has(e.id);
+        const sev = e.category === 'SECRETS' ? 'badge-severity-high' : (['EMAIL','CONTACT','ID_CARDS','FINANCIAL'].includes(e.category) ? 'badge-severity-medium' : 'badge-severity-low');
+        badge.className = `entity-badge ${sev} ${isEx ? 'excluded' : ''}`;
+        badge.innerHTML = `<span>${escapeHtml(e.type)}: ${escapeHtml(e.rawValue)}</span><button class="badge-toggle-btn">${isEx ? '+' : '✕'}</button>`;
+        badge.addEventListener('click', (evt) => {
+          if (evt.target.classList.contains('badge-toggle-btn')) {
+            if (isEx) excludedEntityIds.delete(e.id);
+            else excludedEntityIds.add(e.id);
+            runLivePreview();
+            return;
+          }
+          rawInput.focus();
+          rawInput.setSelectionRange(e.start, e.end);
+        });
+        entityBadges.appendChild(badge);
+      });
+
+      if (preview.entities.length > maxBadges) {
+        const morePill = document.createElement('span');
+        morePill.className = 'entity-badge badge-severity-low';
+        morePill.textContent = `+${(preview.entities.length - maxBadges).toLocaleString()} more sensitive items...`;
+        entityBadges.appendChild(morePill);
+      }
+    }
+
+    // Tabs
+    document.querySelectorAll('.tab-btn').forEach(btn => {
+      btn.addEventListener('click', () => {
+        document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
+        document.querySelectorAll('.tab-content').forEach(c => c.classList.remove('active'));
+        btn.classList.add('active');
+        document.getElementById(btn.getAttribute('data-tab')).classList.add('active');
+      });
+    });
+
+    sanitizeBtn.addEventListener('click', async () => {
+      const text = rawInput.value;
+      if (!text.trim()) return;
+
+      sanitizeBtn.disabled = true;
+      const originalText = sanitizeBtn.textContent;
+      sanitizeBtn.textContent = 'Sanitizing...';
+      await new Promise(r => setTimeout(r, 20));
+
+      try {
+        const res = sanitize(text, { vault, excludedEntityIds: Array.from(excludedEntityIds) });
+        sanitizedOutput.value = res.sanitizedText;
+        lastSanitizedInput = text;
+        outOfDateBadge.classList.add('hidden');
+        sanitizedOutput.parentElement.classList.remove('out-of-date');
+
+        // Highlight placeholders safely
+        const placeholderSpans = res.entities.map(e => ({
+          start: e.sanitizedStart !== undefined ? e.sanitizedStart : res.sanitizedText.indexOf(e.placeholder),
+          end: e.sanitizedEnd !== undefined ? e.sanitizedEnd : (res.sanitizedText.indexOf(e.placeholder) + e.placeholder.length),
+          hlClass: 'hl-placeholder'
+        })).filter(s => s.start !== -1);
+        renderMirrored(res.sanitizedText, placeholderSpans, sanitizedBackdrop);
+
+        // Update live summary
+        liveSummary.classList.remove('hidden');
+        liveSummary.className = 'summary-bar summary-red';
+        const lineCount = (res.sanitizedText.match(/\n/g) || []).length + 1;
+        summaryText.textContent = `Sanitized ${res.stats.total} item(s) across ${lineCount.toLocaleString()} lines (${res.stats.durationMs}ms):`;
+        entityBadges.innerHTML = '';
+        const maxBadges = 40;
+        res.entities.slice(0, maxBadges).forEach(e => {
+          const badge = document.createElement('span');
+          const isEx = excludedEntityIds.has(e.id);
+          const sev = e.category === 'SECRETS' ? 'badge-severity-high' : (['EMAIL','CONTACT','ID_CARDS','FINANCIAL'].includes(e.category) ? 'badge-severity-medium' : 'badge-severity-low');
+          badge.className = `entity-badge ${sev} ${isEx ? 'excluded' : ''}`;
+          badge.innerHTML = `<span>${escapeHtml(e.type)}: ${escapeHtml(e.rawValue)}</span>`;
+          entityBadges.appendChild(badge);
+        });
+
+        if (res.entities.length > maxBadges) {
+          const morePill = document.createElement('span');
+          morePill.className = 'entity-badge badge-severity-low';
+          morePill.textContent = `+${(res.entities.length - maxBadges).toLocaleString()} more sensitive items`;
+          entityBadges.appendChild(morePill);
+        }
+
+        // Residual scan
+        if (res.residualFindings && res.residualFindings.length > 0) {
+          residualAlert.classList.remove('hidden');
+          residualAlert.className = 'residual-banner warning-red';
+          residualAlert.textContent = `Warning: ${res.residualFindings.length} possible sensitive item(s) remain in output!`;
+        } else {
+          residualAlert.classList.remove('hidden');
+          residualAlert.className = 'residual-banner clean-green';
+          residualAlert.textContent = `0 sensitive items remaining (All clear). Processed in ${res.stats.durationMs}ms.`;
+        }
+
+        updateVault();
+      } finally {
+        sanitizeBtn.disabled = false;
+        sanitizeBtn.textContent = originalText;
+      }
+    });
+
+    copySanitizedBtn.addEventListener('click', () => copyText(sanitizedOutput.value, copySanitizedBtn));
+    pasteRawBtn.addEventListener('click', async () => {
+      try {
+        rawInput.value = await navigator.clipboard.readText();
+        runLivePreview();
+      } catch { rawInput.focus(); }
+    });
+    clearRawBtn.addEventListener('click', () => {
+      rawInput.value = ''; rawBackdrop.innerHTML = '';
+      sanitizedOutput.value = ''; sanitizedBackdrop.innerHTML = '';
+      liveSummary.classList.add('hidden'); residualAlert.classList.add('hidden');
+      outOfDateBadge.classList.add('hidden');
+    });
+
+    reverseBtn.addEventListener('click', async () => {
+      const text = aiReplyInput.value;
+      if (!text.trim()) return;
+
+      reverseBtn.disabled = true;
+      const originalText = reverseBtn.textContent;
+      reverseBtn.textContent = 'Restoring...';
+      await new Promise(r => setTimeout(r, 20));
+
+      try {
+        const res = reverseMap(text, vault);
+        restoredOutput.value = res.restoredText;
+        lastReversedAiInput = text;
+        reverseOutOfDateBadge.classList.add('hidden');
+        restoredOutput.parentElement.classList.remove('out-of-date');
+
+        // Render restored backdrop safely
+        const restoredSpans = [];
+        const maxSpans = 150;
+        for (const detail of res.details) {
+          let idx = 0;
+          while ((idx = res.restoredText.indexOf(detail.realValue, idx)) !== -1) {
+            restoredSpans.push({
+              start: idx,
+              end: idx + detail.realValue.length,
+              hlClass: 'hl-restored'
+            });
+            idx += detail.realValue.length;
+            if (restoredSpans.length >= maxSpans) break;
+          }
+          if (restoredSpans.length >= maxSpans) break;
+        }
+        renderMirrored(res.restoredText, restoredSpans, restoredBackdrop);
+
+        reverseStatusBanner.classList.remove('hidden');
+        const unCount = res.unmatchedPlaceholders.length;
+        reverseStatusBanner.className = `status-banner ${unCount > 0 ? 'warning' : ''}`;
+        reverseStatusBanner.textContent = `Found ${res.restoredCount + unCount} placeholder(s): ${res.restoredCount} restored, ${unCount} unmatched.`;
+
+        reverseChips.classList.remove('hidden');
+        reverseChips.innerHTML = '';
+        const maxChips = 40;
+        for (const d of res.details.slice(0, maxChips)) {
+          const c = document.createElement('div');
+          c.className = 'reverse-chip';
+          c.innerHTML = `<strong>${escapeHtml(d.placeholder)}</strong> <span>→</span> <span class="masked-val">••••••••</span>`;
+          const vEl = c.querySelector('.masked-val');
+          let rev = false;
+          vEl.addEventListener('click', () => { rev = !rev; vEl.textContent = rev ? d.realValue : '••••••••'; vEl.classList.toggle('revealed', rev); });
+          reverseChips.appendChild(c);
+        }
+        if (res.details.length > maxChips) {
+          const morePill = document.createElement('div');
+          morePill.className = 'reverse-chip';
+          morePill.textContent = `+${(res.details.length - maxChips).toLocaleString()} more restored tokens`;
+          reverseChips.appendChild(morePill);
+        }
+        for (const u of (res.unmatchedDetails || []).slice(0, 20)) {
+          const c = document.createElement('div');
+          c.className = 'reverse-chip unmatched';
+          c.innerHTML = `<strong>${escapeHtml(u.token)}</strong> <span class="hint-text">${u.hint ? escapeHtml(u.hint) : 'unmatched'}</span>`;
+          reverseChips.appendChild(c);
+        }
+      } finally {
+        reverseBtn.disabled = false;
+        reverseBtn.textContent = originalText;
+      }
+    });
+
+    copyRestoredBtn.addEventListener('click', () => copyText(restoredOutput.value, copyRestoredBtn));
+    pasteAiBtn.addEventListener('click', async () => {
+      try { aiReplyInput.value = await navigator.clipboard.readText(); } catch { aiReplyInput.focus(); }
+    });
+    clearAiBtn.addEventListener('click', () => {
+      aiReplyInput.value = ''; aiBackdrop.innerHTML = '';
+      restoredOutput.value = ''; restoredBackdrop.innerHTML = '';
+      reverseStatusBanner.classList.add('hidden'); reverseChips.classList.add('hidden');
+    });
+
+    clearVaultBtn.addEventListener('click', () => {
+      if (confirm('Clear all in-memory vault mappings?')) {
+        vault.clear();
+        updateVault();
+        showToast('Vault cleared');
+      }
+    });
+
+    async function copyText(t, btn) {
+      if (!t) return;
+      try { await navigator.clipboard.writeText(t); } catch { }
+      const cIcon = btn.querySelector('.copy-icon');
+      const kIcon = btn.querySelector('.check-icon');
+      if (cIcon && kIcon) { cIcon.classList.add('hidden'); kIcon.classList.remove('hidden'); btn.classList.add('copied'); }
+      showToast('Copied to clipboard');
+      setTimeout(() => {
+        if (cIcon && kIcon) { cIcon.classList.remove('hidden'); kIcon.classList.add('hidden'); btn.classList.remove('copied'); }
+      }, 1500);
+    }
+
+    function showToast(m) {
+      toast.textContent = m;
+      toast.classList.remove('hidden');
+      setTimeout(() => toast.classList.add('hidden'), 1500);
+    }
+
+    function updateVault() {
+      const entries = vault.getAllEntries();
+      vaultCount.textContent = entries.length.toString();
+      if (entries.length === 0) {
+        vaultBody.innerHTML = '<tr><td colspan="3" style="text-align:center; color:#64748b;">Vault is empty.</td></tr>';
+        return;
+      }
+      vaultBody.innerHTML = '';
+      entries.forEach(entry => {
+        const tr = document.createElement('tr');
+        const tdP = document.createElement('td'); tdP.textContent = entry.placeholder;
+        const tdR = document.createElement('td'); tdR.className = 'masked-real'; tdR.textContent = '••••••••••••';
+        let rev = false;
+        tdR.addEventListener('click', () => { rev = !rev; tdR.textContent = rev ? entry.realValue : '••••••••••••'; tdR.classList.toggle('revealed', rev); });
+        const tdT = document.createElement('td'); tdT.textContent = entry.type;
+        tr.appendChild(tdP); tr.appendChild(tdR); tr.appendChild(tdT);
+        vaultBody.appendChild(tr);
+      });
+    }
+  </script>
+</body>
+</html>

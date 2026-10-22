@@ -1,0 +1,78 @@
+{
+  "manifest_version": 3,
+  "name": "Localhost Multi-View & Webhook Inspector",
+  "version": "1.0.0",
+  "description": "Synchronized multi-viewport responsive testing and local webhook inspector scoped strictly to local development servers.",
+  "icons": {
+    "16": "icons/icon-16.png",
+    "32": "icons/icon-32.png",
+    "48": "icons/icon-48.png",
+    "128": "icons/icon-128.png"
+  },
+  "action": {
+    "default_title": "Localhost Multi-View & Webhooks",
+    "default_popup": "popup/popup.html",
+    "default_icon": {
+      "16": "icons/icon-16.png",
+      "32": "icons/icon-32.png",
+      "48": "icons/icon-48.png",
+      "128": "icons/icon-128.png"
+    }
+  },
+  "background": {
+    "service_worker": "background/service-worker.js",
+    "type": "module"
+  },
+  "permissions": [
+    "declarativeNetRequest",
+    "storage",
+    "activeTab",
+    "tabs"
+  ],
+  "host_permissions": [
+    "http://localhost/*",
+    "https://localhost/*",
+    "http://127.0.0.1/*",
+    "https://127.0.0.1/*",
+    "http://[::1]/*",
+    "https://[::1]/*",
+    "http://*.localhost/*",
+    "https://*.localhost/*"
+  ],
+  "content_scripts": [
+    {
+      "matches": [
+        "http://localhost/*",
+        "https://localhost/*",
+        "http://127.0.0.1/*",
+        "https://127.0.0.1/*",
+        "http://[::1]/*",
+        "https://[::1]/*",
+        "http://*.localhost/*",
+        "https://*.localhost/*"
+      ],
+      "js": [
+        "content/frame-agent.js"
+      ],
+      "css": [
+        "content/frame-agent.css"
+      ],
+      "all_frames": true,
+      "run_at": "document_start"
+    }
+  ],
+  "devtools_page": "devtools/devtools.html",
+  "options_ui": {
+    "page": "options/options.html",
+    "open_in_tab": true
+  },
+  "commands": {
+    "launch-workspace": {
+      "suggested_key": {
+        "default": "Ctrl+Shift+L",
+        "mac": "Command+Shift+L"
+      },
+      "description": "Launch Localhost Multi-View Workspace"
+    }
+  }
+}

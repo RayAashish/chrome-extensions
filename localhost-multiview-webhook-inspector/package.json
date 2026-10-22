@@ -1,0 +1,22 @@
+{
+  "name": "localhost-multiview-webhook-inspector",
+  "version": "1.0.0",
+  "description": "Chrome Extension for synchronized multi-viewport responsive testing and local webhook inspection",
+  "type": "module",
+  "scripts": {
+    "test": "node --test test/*.test.js",
+    "generate-icons": "node icons/generate-icons.js",
+    "demo": "node demo/server.js",
+    "companion": "node companion/receiver.js"
+  },
+  "keywords": [
+    "chrome-extension",
+    "responsive-design",
+    "multi-view",
+    "webhook-inspector",
+    "localhost",
+    "developer-tools"
+  ],
+  "author": "Antigravity Engineering",
+  "license": "MIT"
+}

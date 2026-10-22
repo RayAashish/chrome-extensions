@@ -1,0 +1,197 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Smart PII Sanitizer - Settings</title>
+  <link rel="stylesheet" href="options.css">
+</head>
+<body class="theme-dark">
+  <div class="settings-wrapper">
+    <!-- Header -->
+    <header class="settings-header">
+      <div class="brand">
+        <svg viewBox="0 0 128 128" width="28" height="28">
+          <path d="M64 12 C96 12 112 28 112 56 C112 88 84 112 64 120 C44 112 16 88 16 56 C16 28 32 12 64 12 Z" fill="#3b82f6"/>
+          <rect x="42" y="56" width="44" height="34" rx="6" fill="#ffffff"/>
+          <path d="M50 56 V44 C50 36.268 56.268 30 64 30 C71.732 30 78 36.268 78 44 V56" fill="none" stroke="#ffffff" stroke-width="7" stroke-linecap="round"/>
+          <circle cx="64" cy="70" r="4.5" fill="#10b981"/>
+        </svg>
+        <div>
+          <h1>Smart PII Sanitizer Settings</h1>
+          <p class="subtitle">Zero network telemetry. All processing and storage remain 100% on this machine.</p>
+        </div>
+      </div>
+      <button id="saveTopBtn" class="btn-primary">Save Settings</button>
+    </header>
+
+    <!-- SECTION 1: DETECTOR CATEGORIES -->
+    <section class="settings-card">
+      <h2>Detector Categories</h2>
+      <p class="card-desc">Enable or disable specific data types to match your workflow.</p>
+      <div class="checkbox-grid">
+        <label class="checkbox-item">
+          <input type="checkbox" id="catEmail" checked>
+          <div>
+            <span class="label-title">Emails</span>
+            <span class="label-desc">Replaced with user_A@example.com</span>
+          </div>
+        </label>
+        <label class="checkbox-item">
+          <input type="checkbox" id="catNetwork" checked>
+          <div>
+            <span class="label-title">Network & IPs</span>
+            <span class="label-desc">IPv4 (10.0.0.x), IPv6, and internal domains</span>
+          </div>
+        </label>
+        <label class="checkbox-item">
+          <input type="checkbox" id="catSecrets" checked>
+          <div>
+            <span class="label-title">Secrets & API Keys</span>
+            <span class="label-desc">AWS, GitHub, Stripe, Slack, Google, JWT, passwords</span>
+          </div>
+        </label>
+        <label class="checkbox-item">
+          <input type="checkbox" id="catFinancial" checked>
+          <div>
+            <span class="label-title">Financial Data</span>
+            <span class="label-desc">Luhn-validated credit cards (4111-1111-1111-xxxx)</span>
+          </div>
+        </label>
+        <label class="checkbox-item">
+          <input type="checkbox" id="catIdCards" checked>
+          <div>
+            <span class="label-title">National IDs</span>
+            <span class="label-desc">US SSN (000-12-xxxx), Indian PAN & Aadhaar</span>
+          </div>
+        </label>
+        <label class="checkbox-item">
+          <input type="checkbox" id="catContact" checked>
+          <div>
+            <span class="label-title">Phone Numbers</span>
+            <span class="label-desc">US & international formats (+1-555-01xx)</span>
+          </div>
+        </label>
+        <label class="checkbox-item">
+          <input type="checkbox" id="catNames">
+          <div>
+            <span class="label-title">Person Names (Heuristic)</span>
+            <span class="label-desc">Capitalized names following titles or salutations</span>
+          </div>
+        </label>
+      </div>
+    </section>
+
+    <!-- SECTION 2: DETECTION SENSITIVITY -->
+    <section class="settings-card">
+      <h2>Detection Sensitivity</h2>
+      <p class="card-desc">Controls entropy thresholds and false positive suppression.</p>
+      <div class="radio-group">
+        <label class="radio-card">
+          <input type="radio" name="sensitivity" value="strict">
+          <div class="radio-body">
+            <span class="radio-title">Strict</span>
+            <span class="radio-desc">Flags all potential secrets, lower entropy cutoff (3.0 bits), redacts loopback 127.0.0.1.</span>
+          </div>
+        </label>
+        <label class="radio-card">
+          <input type="radio" name="sensitivity" value="balanced" checked>
+          <div class="radio-body">
+            <span class="radio-title">Balanced (Recommended)</span>
+            <span class="radio-desc">Standard entropy cutoff (3.4 bits). Excludes loopback/wildcard IPs and semantic version numbers.</span>
+          </div>
+        </label>
+        <label class="radio-card">
+          <input type="radio" name="sensitivity" value="permissive">
+          <div class="radio-body">
+            <span class="radio-title">Permissive</span>
+            <span class="radio-desc">High precision only. Redacts exact vendor prefixes (sk_live_, ghp_) and well-formed emails.</span>
+          </div>
+        </label>
+      </div>
+    </section>
+
+    <!-- SECTION 3: ALLOWLIST -->
+    <section class="settings-card">
+      <h2>Allowlist (Never Redact)</h2>
+      <p class="card-desc">Enter domains, IPs, or keywords (one per line) that must NEVER be sanitized (e.g. your public company domain).</p>
+      <textarea id="allowlistText" rows="4" placeholder="company.com&#10;*.example.com&#10;api.publicservice.io&#10;staging-cluster"></textarea>
+    </section>
+
+    <!-- SECTION 4: CUSTOM REGEX RULES -->
+    <section class="settings-card">
+      <h2>Custom Regex Rules</h2>
+      <p class="card-desc">Add organization-specific data patterns with custom placeholder templates.</p>
+      <div class="custom-rule-form">
+        <input type="text" id="ruleName" placeholder="Rule Name (e.g. Internal Employee ID)">
+        <input type="text" id="ruleRegex" placeholder="Regex Pattern (e.g. \bEMP-[0-9]{6}\b)">
+        <input type="text" id="ruleTemplate" placeholder="Template (e.g. EMP_ID_{N})">
+        <button id="addRuleBtn" class="btn-secondary">Add Rule</button>
+      </div>
+      <table class="rules-table">
+        <thead>
+          <tr>
+            <th>Name</th>
+            <th>Regex Pattern</th>
+            <th>Template</th>
+            <th>Action</th>
+          </tr>
+        </thead>
+        <tbody id="rulesTableBody">
+          <tr>
+            <td colspan="4" class="empty-rules">No custom rules added yet.</td>
+          </tr>
+        </tbody>
+      </table>
+    </section>
+
+    <!-- SECTION 5: VAULT SECURITY & ENCRYPTION -->
+    <section class="settings-card">
+      <h2>Vault Storage & Cryptography</h2>
+      <p class="card-desc">Control session vault longevity and optional Web Crypto AES-GCM encrypted persistence.</p>
+      
+      <div class="form-row">
+        <label for="autoExpireSelect">Auto-Expire Vault:</label>
+        <select id="autoExpireSelect">
+          <option value="0">Disabled (Session End / Browser Close)</option>
+          <option value="15">After 15 minutes of inactivity</option>
+          <option value="60">After 1 hour of inactivity</option>
+          <option value="240">After 4 hours of inactivity</option>
+        </select>
+      </div>
+
+      <div class="encryption-box">
+        <div class="encryption-header">
+          <label class="checkbox-item">
+            <input type="checkbox" id="encryptPersistenceToggle">
+            <div>
+              <span class="label-title">Enable Encrypted Persistence Across Browser Restarts</span>
+              <span class="label-desc">Vault is encrypted with AES-GCM 256-bit using PBKDF2 (100,000 iterations) and stored locally.</span>
+            </div>
+          </label>
+        </div>
+        <div id="passphraseArea" class="passphrase-area hidden">
+          <input type="password" id="vaultPassphrase" placeholder="Enter encryption passphrase (min 8 characters)">
+          <p class="passphrase-hint">Warning: If you forget this passphrase, previous encrypted vault items cannot be recovered.</p>
+        </div>
+      </div>
+    </section>
+
+    <!-- SECTION 6: AI CHAT SITES INTEGRATION -->
+    <section class="settings-card">
+      <h2>AI Chat Sites Paste-Interception Permissions</h2>
+      <p class="card-desc">Grant optional permission per site so Smart PII Sanitizer can safeguard your clipboard on chat inputs without broad permissions.</p>
+      <div class="sites-list" id="sitesList">
+        <!-- Injected dynamically -->
+      </div>
+    </section>
+
+    <div class="save-footer">
+      <button id="saveBottomBtn" class="btn-primary">Save Settings</button>
+      <span id="saveStatus" class="save-status hidden">Settings saved successfully!</span>
+    </div>
+  </div>
+
+  <script type="module" src="options.js"></script>
+</body>
+</html>

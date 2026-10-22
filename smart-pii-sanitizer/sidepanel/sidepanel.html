@@ -1,0 +1,234 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Smart PII Sanitizer - Side Panel</title>
+  <link rel="stylesheet" href="sidepanel.css">
+</head>
+<body class="theme-dark">
+  <div class="app-container">
+    <!-- Header -->
+    <header class="app-header">
+      <div class="logo-area">
+        <svg class="logo-icon" viewBox="0 0 128 128" width="22" height="22" aria-hidden="true">
+          <path d="M64 12 C96 12 112 28 112 56 C112 88 84 112 64 120 C44 112 16 88 16 56 C16 28 32 12 64 12 Z" fill="#3b82f6"/>
+          <rect x="42" y="56" width="44" height="34" rx="6" fill="#ffffff"/>
+          <path d="M50 56 V44 C50 36.268 56.268 30 64 30 C71.732 30 78 36.268 78 44 V56" fill="none" stroke="#ffffff" stroke-width="7" stroke-linecap="round"/>
+          <circle cx="64" cy="70" r="4.5" fill="#10b981"/>
+        </svg>
+        <span class="app-title">Smart PII Sanitizer</span>
+      </div>
+      <div class="header-actions">
+        <button id="themeToggleBtn" class="icon-btn" title="Toggle Light/Dark Theme" aria-label="Toggle Theme">
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true">
+            <circle cx="12" cy="12" r="5"/><path d="M12 1v2M12 21v2M4.22 4.22l1.42 1.42M18.36 18.36l1.42 1.42M1 12h2M21 12h2M4.22 19.78l1.42-1.42M18.36 5.64l1.42-1.42"/>
+          </svg>
+        </button>
+        <button id="openSettingsBtn" class="icon-btn" title="Settings" aria-label="Open Settings">
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true">
+            <circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1 0 2.83 2 2 0 0 1-2.83 0l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-2 2 2 2 0 0 1-2-2v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83 0 2 2 0 0 1 0-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1-2-2 2 2 0 0 1 2-2h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 0-2.83 2 2 0 0 1 2.83 0l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 2-2 2 2 0 0 1 2 2v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 0 2 2 0 0 1 0 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 2 2 2 2 0 0 1-2 2h-.09a1.65 1.65 0 0 0-1.51 1z"/>
+          </svg>
+        </button>
+      </div>
+    </header>
+
+    <!-- Navigation Tabs -->
+    <nav class="nav-tabs" role="tablist">
+      <button class="tab-btn active" data-tab="sanitizeTab" role="tab" aria-selected="true">
+        <span>Sanitize</span>
+      </button>
+      <button class="tab-btn" data-tab="reverseTab" role="tab" aria-selected="false">
+        <span>Reverse Map</span>
+      </button>
+      <button class="tab-btn" data-tab="vaultTab" role="tab" aria-selected="false">
+        <span>Vault</span>
+        <span id="vaultBadge" class="tab-badge">0</span>
+      </button>
+    </nav>
+
+    <!-- TAB 1: SANITIZE -->
+    <main id="sanitizeTab" class="tab-content active" role="tabpanel">
+      <!-- Live Red Sensitive-Item Flagging Banner -->
+      <div id="liveSummary" class="summary-bar summary-red hidden" role="region" aria-live="polite">
+        <div class="summary-header">
+          <svg class="summary-warn-icon" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" aria-hidden="true">
+            <path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"/>
+            <line x1="12" y1="9" x2="12" y2="13"/>
+            <line x1="12" y1="17" x2="12.01" y2="17"/>
+          </svg>
+          <span class="summary-text" id="summaryText">Scanning...</span>
+        </div>
+        <div id="entityBadges" class="entity-badges"></div>
+      </div>
+
+      <!-- Raw Input Section with Mirrored-Overlay -->
+      <div class="field-group">
+        <div class="field-header">
+          <div class="field-label-group">
+            <label for="rawInput">Input (Raw text, logs, code, JSON)</label>
+            <span id="outOfDateBadge" class="badge-out-of-date hidden">Out of date</span>
+          </div>
+          <div class="field-actions">
+            <button id="pasteClipboardBtn" class="icon-btn-sm" title="Paste from clipboard" aria-label="Paste from clipboard">
+              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true">
+                <path d="M16 4h2a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2V6a2 2 0 0 1 2-2h2"/>
+                <rect x="8" y="2" width="8" height="4" rx="1" ry="1"/>
+              </svg>
+            </button>
+            <button id="clearInputBtn" class="icon-btn-sm" title="Clear input" aria-label="Clear input">
+              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true">
+                <polyline points="3 6 5 6 21 6"/><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/>
+              </svg>
+            </button>
+          </div>
+        </div>
+        <div class="editor-container">
+          <div id="rawInputBackdrop" class="editor-backdrop" aria-hidden="true"></div>
+          <textarea id="rawInput" placeholder="Paste sensitive text, database URLs, emails, stack traces, or API keys here..." spellcheck="false"></textarea>
+        </div>
+      </div>
+
+      <!-- Action Bar -->
+      <div class="action-bar">
+        <button id="sanitizeBtn" class="btn-primary">
+          <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true">
+            <path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/>
+          </svg>
+          Sanitize
+        </button>
+      </div>
+
+      <!-- Residual Scan Banner (CASE 12) -->
+      <div id="residualAlert" class="residual-banner hidden" role="alert"></div>
+
+      <!-- Sanitized Output Section -->
+      <div class="field-group">
+        <div class="field-header">
+          <label for="sanitizedOutput">Output (Sanitized format-valid dummy tokens)</label>
+          <div class="field-actions">
+            <button id="copySanitizedBtn" class="icon-btn-sm copy-btn" title="Copy sanitized text" aria-label="Copy sanitized text">
+              <svg class="copy-icon" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true">
+                <rect x="9" y="9" width="13" height="13" rx="2" ry="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/>
+              </svg>
+              <svg class="check-icon hidden" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#10b981" stroke-width="2.5" aria-hidden="true">
+                <polyline points="20 6 9 17 4 12"/>
+              </svg>
+            </button>
+          </div>
+        </div>
+        <div class="editor-container">
+          <div id="sanitizedOutputBackdrop" class="editor-backdrop" aria-hidden="true"></div>
+          <textarea id="sanitizedOutput" readonly placeholder="Deterministic dummy tokens will appear here..." spellcheck="false"></textarea>
+        </div>
+      </div>
+    </main>
+
+    <!-- TAB 2: REVERSE MAP -->
+    <main id="reverseTab" class="tab-content" role="tabpanel">
+      <div class="field-group">
+        <div class="field-header">
+          <div class="field-label-group">
+            <label for="aiResponseInput">AI Response (Contains dummy tokens)</label>
+            <span id="reverseOutOfDateBadge" class="badge-out-of-date hidden">Out of date</span>
+          </div>
+          <div class="field-actions">
+            <button id="pasteAiReplyBtn" class="icon-btn-sm" title="Paste AI reply" aria-label="Paste AI reply">
+              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true">
+                <path d="M16 4h2a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2V6a2 2 0 0 1 2-2h2"/>
+                <rect x="8" y="2" width="8" height="4" rx="1" ry="1"/>
+              </svg>
+            </button>
+            <button id="clearAiReplyBtn" class="icon-btn-sm" title="Clear AI reply" aria-label="Clear AI reply">
+              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true">
+                <polyline points="3 6 5 6 21 6"/><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/>
+              </svg>
+            </button>
+          </div>
+        </div>
+        <div class="editor-container">
+          <div id="aiResponseBackdrop" class="editor-backdrop" aria-hidden="true"></div>
+          <textarea id="aiResponseInput" placeholder="Paste the LLM's response or code snippet containing user_A@example.com, REDACTED_KEY_1, 10.0.0.1 here..." spellcheck="false"></textarea>
+        </div>
+      </div>
+
+      <div class="action-bar">
+        <button id="reverseMapBtn" class="btn-primary">
+          <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true">
+            <path d="M3 12a9 9 0 1 0 9-9 9.75 9.75 0 0 0-6.74 2.74L3 8"/>
+            <path d="M3 3v5h5"/>
+          </svg>
+          Reverse Map
+        </button>
+      </div>
+
+      <!-- Reverse Map Summary & Unmatched Details -->
+      <div id="reverseStatusBanner" class="status-banner hidden"></div>
+      <div id="reversePlaceholderChips" class="entity-badges hidden"></div>
+
+      <div class="field-group">
+        <div class="field-header">
+          <label for="restoredOutput">Restored Output (Original real values swapped back)</label>
+          <div class="field-actions">
+            <button id="copyRestoredBtn" class="icon-btn-sm copy-btn" title="Copy restored text" aria-label="Copy restored text">
+              <svg class="copy-icon" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true">
+                <rect x="9" y="9" width="13" height="13" rx="2" ry="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/>
+              </svg>
+              <svg class="check-icon hidden" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#10b981" stroke-width="2.5" aria-hidden="true">
+                <polyline points="20 6 9 17 4 12"/>
+              </svg>
+            </button>
+          </div>
+        </div>
+        <div class="editor-container">
+          <div id="restoredOutputBackdrop" class="editor-backdrop" aria-hidden="true"></div>
+          <textarea id="restoredOutput" readonly placeholder="Output with your original values will appear here..." spellcheck="false"></textarea>
+        </div>
+      </div>
+    </main>
+
+    <!-- TAB 3: VAULT VIEWER -->
+    <main id="vaultTab" class="tab-content" role="tabpanel">
+      <div class="vault-header">
+        <div>
+          <span class="vault-heading">Session Vault</span>
+          <p class="vault-subheading">In-memory bidirectional mapping. Never leaves this browser.</p>
+        </div>
+        <button id="clearVaultBtn" class="btn-danger" title="Clear all session data">Clear Vault</button>
+      </div>
+
+      <div class="vault-table-wrapper">
+        <table class="vault-table">
+          <thead>
+            <tr>
+              <th>Placeholder</th>
+              <th>Original Real Value</th>
+              <th>Type</th>
+              <th>Action</th>
+            </tr>
+          </thead>
+          <tbody id="vaultTableBody">
+            <tr>
+              <td colspan="4" class="empty-cell">Vault is currently empty. Sanitize text to populate.</td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+    </main>
+
+    <!-- Persistent Honest Limitation Warning -->
+    <footer class="app-footer">
+      <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true">
+        <circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/>
+      </svg>
+      <span>Automated detection can miss things. Review before sending.</span>
+    </footer>
+  </div>
+
+  <!-- Accessible Toast & Live Announcement -->
+  <div id="clipboardLiveRegion" class="sr-only" aria-live="polite"></div>
+  <div id="toastMessage" class="toast hidden" role="status"></div>
+
+  <script type="module" src="sidepanel.js"></script>
+</body>
+</html>

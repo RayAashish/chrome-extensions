@@ -1,0 +1,38 @@
+{
+  "name": "statement2ledger",
+  "version": "1.0.0",
+  "description": "Convert Indian bank statements (PDF, CSV) into standardized ledgers 100% offline in your browser.",
+  "type": "module",
+  "scripts": {
+    "dev": "vite",
+    "build": "vite build",
+    "preview": "vite preview",
+    "test": "vitest run",
+    "test:watch": "vitest",
+    "generate-fixtures": "tsx scripts/generate-fixtures.ts"
+  },
+  "keywords": [
+    "hdfc",
+    "sbi",
+    "icici",
+    "bank-statement",
+    "privacy",
+    "client-side",
+    "ledger",
+    "pdf-parser"
+  ],
+  "author": "Statement2Ledger Contributors",
+  "license": "MIT",
+  "dependencies": {
+    "pdfjs-dist": "^4.0.0",
+    "xlsx": "^0.18.5"
+  },
+  "devDependencies": {
+    "@types/node": "^22.0.0",
+    "pdf-lib": "^1.17.1",
+    "tsx": "^4.19.0",
+    "typescript": "^5.5.0",
+    "vite": "^5.4.0",
+    "vitest": "^2.0.0"
+  }
+}

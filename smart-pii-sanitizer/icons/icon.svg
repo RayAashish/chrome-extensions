@@ -1,0 +1,32 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 128 128" width="128" height="128">
+  <defs>
+    <linearGradient id="shieldGrad" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#3b82f6"/>
+      <stop offset="100%" stop-color="#1d4ed8"/>
+    </linearGradient>
+    <linearGradient id="lockGrad" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#10b981"/>
+      <stop offset="100%" stop-color="#059669"/>
+    </linearGradient>
+    <filter id="drop" x="-10%" y="-10%" width="120%" height="125%">
+      <feDropShadow dx="0" dy="4" stdDeviation="4" flood-color="#000000" flood-opacity="0.25"/>
+    </filter>
+  </defs>
+
+  <!-- Background Shield -->
+  <path d="M64 12 C96 12 112 28 112 56 C112 88 84 112 64 120 C44 112 16 88 16 56 C16 28 32 12 64 12 Z" 
+        fill="url(#shieldGrad)" 
+        filter="url(#drop)"/>
+
+  <!-- Inner Vault Lock Emblem -->
+  <rect x="42" y="56" width="44" height="34" rx="6" fill="#ffffff" />
+  <path d="M50 56 V44 C50 36.268 56.268 30 64 30 C71.732 30 78 36.268 78 44 V56" 
+        fill="none" 
+        stroke="#ffffff" 
+        stroke-width="7" 
+        stroke-linecap="round"/>
+  
+  <!-- Keyhole in Emerald Green -->
+  <circle cx="64" cy="70" r="4.5" fill="url(#lockGrad)"/>
+  <polygon points="61.5,70 66.5,70 68,82 60,82" fill="url(#lockGrad)"/>
+</svg>

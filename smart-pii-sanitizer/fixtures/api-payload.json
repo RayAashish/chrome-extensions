@@ -1,0 +1,29 @@
+{
+  "transaction_id": "tx_9988112233",
+  "status": "pending_verification",
+  "created_at": "2026-10-22T08:45:00Z",
+  "customer": {
+    "name": "Sarah Connor",
+    "email": "sarah.connor@cyberdyne.org",
+    "phone": "+1-555-0192",
+    "ssn": "123-45-6789",
+    "ip_address": "203.0.113.195",
+    "billing_address": {
+      "line1": "404 Cyber Way",
+      "city": "Los Angeles",
+      "state": "CA",
+      "postal_code": "90210"
+    }
+  },
+  "payment_method": {
+    "type": "credit_card",
+    "card_number": "4111-1111-1111-1111",
+    "exp_month": "12",
+    "exp_year": "2028",
+    "gateway_secret": "sk_live_51H8xYzAbCdEfGhIjKlMnOpQr"
+  },
+  "metadata": {
+    "origin_server": "api-gateway.corp.internal",
+    "api_version": "2026-04-01"
+  }
+}

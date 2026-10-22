@@ -1,0 +1,21 @@
+{
+  "name": "smart-pii-sanitizer",
+  "version": "1.0.0",
+  "description": "Deterministic, structure-preserving local PII & secret sanitizer Chrome extension with reverse-mapping.",
+  "type": "module",
+  "scripts": {
+    "test": "node --test test/**/*.test.js",
+    "test:acceptance": "node --test test/acceptance.test.js",
+    "test:perf": "node --test test/performance.test.js"
+  },
+  "keywords": [
+    "pii",
+    "sanitizer",
+    "privacy",
+    "chrome-extension",
+    "manifest-v3",
+    "llm-privacy"
+  ],
+  "author": "Smart PII Sanitizer Team",
+  "license": "MIT"
+}

@@ -1,0 +1,367 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Smart PII Sanitizer - Standalone Web App</title>
+  <style>
+    :root {
+      --bg-primary: #0f172a;
+      --bg-secondary: #1e293b;
+      --bg-tertiary: #334155;
+      --text-primary: #f8fafc;
+      --text-secondary: #94a3b8;
+      --text-muted: #64748b;
+      --accent: #3b82f6;
+      --accent-hover: #2563eb;
+      --border: #334155;
+      --font-mono: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace;
+    }
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+      background-color: var(--bg-primary);
+      color: var(--text-primary);
+      line-height: 1.5;
+      padding: 24px;
+      display: flex;
+      justify-content: center;
+    }
+    .container {
+      width: 100%;
+      max-width: 900px;
+      display: flex;
+      flex-direction: column;
+      gap: 16px;
+    }
+    header {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      border-bottom: 1px solid var(--border);
+      padding-bottom: 16px;
+    }
+    .brand {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+    }
+    h1 { font-size: 20px; font-weight: 700; }
+    .offline-badge {
+      background: rgba(16, 185, 129, 0.15);
+      color: #10b981;
+      border: 1px solid rgba(16, 185, 129, 0.3);
+      padding: 3px 10px;
+      border-radius: 12px;
+      font-size: 11px;
+      font-weight: 600;
+    }
+    .tabs {
+      display: flex;
+      border-bottom: 1px solid var(--border);
+      gap: 8px;
+    }
+    .tab-btn {
+      background: transparent;
+      border: none;
+      border-bottom: 2px solid transparent;
+      color: var(--text-secondary);
+      padding: 10px 16px;
+      font-size: 14px;
+      font-weight: 600;
+      cursor: pointer;
+    }
+    .tab-btn.active {
+      color: var(--accent);
+      border-bottom-color: var(--accent);
+    }
+    .tab-content { display: none; flex-direction: column; gap: 14px; }
+    .tab-content.active { display: flex; }
+    .field-group { display: flex; flex-direction: column; gap: 6px; }
+    .field-header { display: flex; justify-content: space-between; align-items: center; }
+    label { font-size: 13px; font-weight: 600; color: var(--text-secondary); }
+    textarea {
+      width: 100%;
+      background: var(--bg-secondary);
+      border: 1px solid var(--border);
+      border-radius: 8px;
+      color: var(--text-primary);
+      font-family: var(--font-mono);
+      font-size: 13px;
+      padding: 12px;
+      min-height: 140px;
+      outline: none;
+    }
+    textarea:focus { border-color: var(--accent); }
+    .btn-row { display: flex; justify-content: flex-end; gap: 8px; }
+    .btn {
+      background: var(--accent);
+      color: #fff;
+      border: none;
+      padding: 8px 18px;
+      border-radius: 6px;
+      font-weight: 600;
+      cursor: pointer;
+      font-size: 13px;
+    }
+    .btn:hover { background: var(--accent-hover); }
+    .btn-sm {
+      background: var(--bg-tertiary);
+      border: 1px solid var(--border);
+      color: var(--text-secondary);
+      border-radius: 4px;
+      padding: 4px 10px;
+      font-size: 11px;
+      cursor: pointer;
+    }
+    .btn-sm:hover { color: var(--text-primary); }
+    .vault-table {
+      width: 100%;
+      border-collapse: collapse;
+      font-size: 12px;
+      background: var(--bg-secondary);
+      border: 1px solid var(--border);
+      border-radius: 8px;
+      overflow: hidden;
+    }
+    .vault-table th, .vault-table td {
+      padding: 10px 12px;
+      text-align: left;
+      border-bottom: 1px solid var(--border);
+      font-family: var(--font-mono);
+    }
+    .vault-table th { background: var(--bg-tertiary); color: var(--text-secondary); }
+    .masked-real { cursor: pointer; color: var(--text-muted); }
+    .masked-real.revealed { color: var(--text-primary); }
+    .summary-bar {
+      background: var(--bg-secondary);
+      border: 1px solid var(--border);
+      border-radius: 6px;
+      padding: 8px 12px;
+      font-size: 12px;
+      color: var(--text-secondary);
+    }
+    footer {
+      border-top: 1px solid var(--border);
+      padding-top: 12px;
+      text-align: center;
+      font-size: 11px;
+      color: var(--text-muted);
+    }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <header>
+      <div class="brand">
+        <svg viewBox="0 0 128 128" width="28" height="28">
+          <path d="M64 12 C96 12 112 28 112 56 C112 88 84 112 64 120 C44 112 16 88 16 56 C16 28 32 12 64 12 Z" fill="#3b82f6"/>
+          <rect x="42" y="56" width="44" height="34" rx="6" fill="#ffffff"/>
+          <path d="M50 56 V44 C50 36.268 56.268 30 64 30 C71.732 30 78 36.268 78 44 V56" fill="none" stroke="#ffffff" stroke-width="7" stroke-linecap="round"/>
+          <circle cx="64" cy="70" r="4.5" fill="#10b981"/>
+        </svg>
+        <h1>Smart PII Sanitizer (Standalone)</h1>
+      </div>
+      <span class="offline-badge">100% Local / Zero Network</span>
+    </header>
+
+    <div class="tabs">
+      <button class="tab-btn active" data-tab="tabSanitize">Sanitize</button>
+      <button class="tab-btn" data-tab="tabReverse">Reverse Map</button>
+      <button class="tab-btn" data-tab="tabVault">Vault (<span id="vaultCount">0</span>)</button>
+    </div>
+
+    <!-- SANITIZE TAB -->
+    <div id="tabSanitize" class="tab-content active">
+      <div id="liveStatus" class="summary-bar">Ready. Paste text below to sanitize.</div>
+      <div class="field-group">
+        <div class="field-header">
+          <label for="rawInput">Input (Raw Text, Logs, SQL, JSON)</label>
+          <button id="clearRawBtn" class="btn-sm">Clear</button>
+        </div>
+        <textarea id="rawInput" placeholder="Paste sensitive text here..."></textarea>
+      </div>
+
+      <div class="btn-row">
+        <button id="sanitizeBtn" class="btn">Sanitize Now</button>
+      </div>
+
+      <div class="field-group">
+        <div class="field-header">
+          <label for="sanitizedOutput">Output (Deterministic Dummy Tokens)</label>
+          <button id="copySanitizedBtn" class="btn-sm">Copy Sanitized</button>
+        </div>
+        <textarea id="sanitizedOutput" readonly placeholder="Sanitized output will appear here..."></textarea>
+      </div>
+    </div>
+
+    <!-- REVERSE TAB -->
+    <div id="tabReverse" class="tab-content">
+      <div class="field-group">
+        <div class="field-header">
+          <label for="aiReplyInput">AI Chat Response (With Dummy Tokens)</label>
+          <button id="clearAiBtn" class="btn-sm">Clear</button>
+        </div>
+        <textarea id="aiReplyInput" placeholder="Paste AI chatbot response containing user_A@example.com, REDACTED_KEY_1, 10.0.0.1..."></textarea>
+      </div>
+
+      <div class="btn-row">
+        <button id="reverseBtn" class="btn">Reverse Map</button>
+      </div>
+
+      <div class="field-group">
+        <div class="field-header">
+          <label for="restoredOutput">Restored Output (Original Real Values)</label>
+          <button id="copyRestoredBtn" class="btn-sm">Copy Restored</button>
+        </div>
+        <textarea id="restoredOutput" readonly placeholder="Restored original text will appear here..."></textarea>
+      </div>
+    </div>
+
+    <!-- VAULT TAB -->
+    <div id="tabVault" class="tab-content">
+      <div class="btn-row" style="margin-bottom: 8px;">
+        <button id="clearVaultBtn" class="btn-sm" style="color: #f87171;">Clear Vault</button>
+      </div>
+      <table class="vault-table">
+        <thead>
+          <tr>
+            <th>Placeholder</th>
+            <th>Original Real Value (Click to reveal)</th>
+            <th>Type</th>
+          </tr>
+        </thead>
+        <tbody id="vaultBody">
+          <tr><td colspan="3" style="text-align:center; color:#64748b;">Vault is empty.</td></tr>
+        </tbody>
+      </table>
+    </div>
+
+    <footer>
+      Automated detection can miss things. Review before sending.
+    </footer>
+  </div>
+
+  <script type="module">
+    import { sanitize } from '../core/sanitizer.js';
+    import { reverseMap } from '../core/reverse.js';
+    import { Vault } from '../core/vault.js';
+
+    const vault = new Vault();
+
+    const rawInput = document.getElementById('rawInput');
+    const sanitizedOutput = document.getElementById('sanitizedOutput');
+    const sanitizeBtn = document.getElementById('sanitizeBtn');
+    const copySanitizedBtn = document.getElementById('copySanitizedBtn');
+    const clearRawBtn = document.getElementById('clearRawBtn');
+    const liveStatus = document.getElementById('liveStatus');
+
+    const aiReplyInput = document.getElementById('aiReplyInput');
+    const restoredOutput = document.getElementById('restoredOutput');
+    const reverseBtn = document.getElementById('reverseBtn');
+    const copyRestoredBtn = document.getElementById('copyRestoredBtn');
+    const clearAiBtn = document.getElementById('clearAiBtn');
+
+    const vaultCount = document.getElementById('vaultCount');
+    const vaultBody = document.getElementById('vaultBody');
+    const clearVaultBtn = document.getElementById('clearVaultBtn');
+
+    // Tab buttons
+    document.querySelectorAll('.tab-btn').forEach(btn => {
+      btn.addEventListener('click', () => {
+        document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
+        document.querySelectorAll('.tab-content').forEach(c => c.classList.remove('active'));
+        btn.classList.add('active');
+        document.getElementById(btn.getAttribute('data-tab')).classList.add('active');
+      });
+    });
+
+    sanitizeBtn.addEventListener('click', () => {
+      const text = rawInput.value;
+      if (!text.trim()) return;
+
+      const res = sanitize(text, { vault });
+      sanitizedOutput.value = res.sanitizedText;
+      liveStatus.textContent = `Sanitized ${res.stats.total} item(s) in ${res.stats.durationMs}ms.`;
+      updateVault();
+    });
+
+    copySanitizedBtn.addEventListener('click', async () => {
+      if (sanitizedOutput.value) {
+        await navigator.clipboard.writeText(sanitizedOutput.value);
+        copySanitizedBtn.textContent = 'Copied!';
+        setTimeout(() => copySanitizedBtn.textContent = 'Copy Sanitized', 1200);
+      }
+    });
+
+    clearRawBtn.addEventListener('click', () => {
+      rawInput.value = '';
+      sanitizedOutput.value = '';
+      liveStatus.textContent = 'Ready. Paste text below to sanitize.';
+    });
+
+    reverseBtn.addEventListener('click', () => {
+      const text = aiReplyInput.value;
+      if (!text.trim()) return;
+
+      const { restoredText, restoredCount } = reverseMap(text, vault);
+      restoredOutput.value = restoredText;
+    });
+
+    copyRestoredBtn.addEventListener('click', async () => {
+      if (restoredOutput.value) {
+        await navigator.clipboard.writeText(restoredOutput.value);
+        copyRestoredBtn.textContent = 'Copied!';
+        setTimeout(() => copyRestoredBtn.textContent = 'Copy Restored', 1200);
+      }
+    });
+
+    clearAiBtn.addEventListener('click', () => {
+      aiReplyInput.value = '';
+      restoredOutput.value = '';
+    });
+
+    clearVaultBtn.addEventListener('click', () => {
+      if (confirm('Clear all in-memory vault mappings?')) {
+        vault.clear();
+        updateVault();
+      }
+    });
+
+    function updateVault() {
+      const entries = vault.getAllEntries();
+      vaultCount.textContent = entries.length.toString();
+
+      if (entries.length === 0) {
+        vaultBody.innerHTML = '<tr><td colspan="3" style="text-align:center; color:#64748b;">Vault is empty.</td></tr>';
+        return;
+      }
+
+      vaultBody.innerHTML = '';
+      entries.forEach(entry => {
+        const tr = document.createElement('tr');
+        const tdP = document.createElement('td');
+        tdP.textContent = entry.placeholder;
+
+        const tdR = document.createElement('td');
+        tdR.className = 'masked-real';
+        tdR.textContent = '••••••••••••';
+        let rev = false;
+        tdR.addEventListener('click', () => {
+          rev = !rev;
+          tdR.textContent = rev ? entry.realValue : '••••••••••••';
+          tdR.classList.toggle('revealed', rev);
+        });
+
+        const tdT = document.createElement('td');
+        tdT.textContent = entry.type;
+
+        tr.appendChild(tdP);
+        tr.appendChild(tdR);
+        tr.appendChild(tdT);
+        vaultBody.appendChild(tr);
+      });
+    }
+  </script>
+</body>
+</html>

@@ -1,0 +1,257 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Localhost Webhook Inspector & Composer</title>
+  <link rel="stylesheet" href="composer.css">
+</head>
+<body>
+  <div class="composer-container">
+    <!-- Top Header Bar -->
+    <header class="composer-header">
+      <div class="header-branding">
+        <span class="header-icon">⚡</span>
+        <h1>Webhook Inspector</h1>
+        <span class="header-badge">Local-Only (No Cloud Tunnel)</span>
+      </div>
+      <div class="header-actions">
+        <button id="btn-open-companion" class="btn btn-secondary btn-sm" title="Check optional companion listener status">
+          <span class="status-dot dot-idle" id="companion-indicator"></span> Companion Listener
+        </button>
+        <button id="btn-export-history" class="btn btn-secondary btn-sm" title="Export request collection as JSON">Export</button>
+        <button id="btn-import-history" class="btn btn-secondary btn-sm" title="Import collection JSON">Import</button>
+        <input type="file" id="file-import-input" accept=".json" style="display: none;">
+        <button id="btn-clear-history" class="btn btn-danger btn-sm" title="Clear all stored history">Clear History</button>
+      </div>
+    </header>
+
+    <!-- Main Workspace Layout: 3-column / split panel -->
+    <div class="composer-body">
+      <!-- Left Column: History & Templates -->
+      <aside class="sidebar-panel">
+        <div class="sidebar-section">
+          <div class="section-title">
+            <h3>Payload Templates</h3>
+          </div>
+          <select id="select-template" class="form-control select-template">
+            <option value="" disabled selected>-- Choose a sample template --</option>
+          </select>
+          <div id="template-description" class="template-desc text-muted"></div>
+        </div>
+
+        <div class="sidebar-section history-section">
+          <div class="section-title">
+            <h3>Request History</h3>
+            <span id="history-count" class="badge">0</span>
+          </div>
+          <div class="history-search">
+            <input type="text" id="history-search-input" class="form-control form-control-sm" placeholder="Filter by endpoint, status, tag...">
+          </div>
+          <div id="history-list" class="history-list">
+            <div class="empty-state">No requests sent yet.</div>
+          </div>
+        </div>
+      </aside>
+
+      <!-- Center Column: Request Composer -->
+      <main class="composer-main">
+        <!-- Request Line -->
+        <div class="request-line">
+          <select id="req-method" class="form-control method-select">
+            <option value="POST" selected>POST</option>
+            <option value="GET">GET</option>
+            <option value="PUT">PUT</option>
+            <option value="PATCH">PATCH</option>
+            <option value="DELETE">DELETE</option>
+            <option value="HEAD">HEAD</option>
+            <option value="OPTIONS">OPTIONS</option>
+          </select>
+          <div class="url-input-wrapper">
+            <input type="text" id="req-url" class="form-control url-input" placeholder="http://localhost:8080/api/webhooks/stripe" value="http://localhost:8080/api/webhooks/stripe">
+            <span id="url-validation-badge" class="url-badge badge-valid">Localhost</span>
+          </div>
+          <button id="btn-send-request" class="btn btn-primary btn-send">
+            <span class="send-label">Send Request</span>
+            <span class="spinner" id="send-spinner" style="display: none;"></span>
+          </button>
+        </div>
+
+        <div id="host-warning" class="alert alert-warning" style="display: none;">
+          <strong>Security Notice:</strong> Target host is not recognized as a standard local development origin (localhost, 127.0.0.1, [::1]). Request may fail due to browser security boundaries.
+        </div>
+
+        <!-- Composer Tabs -->
+        <div class="composer-tabs-bar">
+          <button class="tab-btn active" data-tab="tab-body">Payload Body</button>
+          <button class="tab-btn" data-tab="tab-headers">Headers (<span id="headers-count-badge">1</span>)</button>
+          <button class="tab-btn" data-tab="tab-signatures">HMAC Signature</button>
+          <button class="tab-btn" data-tab="tab-variables">Variables & Tokens</button>
+        </div>
+
+        <!-- Tab 1: Payload Body -->
+        <div id="tab-body" class="tab-content active">
+          <div class="tab-toolbar">
+            <div class="format-buttons">
+              <label class="radio-label"><input type="radio" name="body-type" value="json" checked> JSON</label>
+              <label class="radio-label"><input type="radio" name="body-type" value="form"> Form-encoded</label>
+              <label class="radio-label"><input type="radio" name="body-type" value="text"> Raw Text</label>
+              <label class="radio-label"><input type="radio" name="body-type" value="xml"> XML</label>
+            </div>
+            <div class="toolbar-actions">
+              <button id="btn-substitute-vars" class="btn btn-outline btn-xs" title="Evaluate and replace {{timestamp}}, {{uuid}}, etc. in place">Substitute Variables</button>
+              <button id="btn-format-json" class="btn btn-outline btn-xs" title="Pretty print JSON">Format JSON</button>
+              <button id="btn-validate-json" class="btn btn-outline btn-xs" title="Check JSON syntax">Validate JSON</button>
+            </div>
+          </div>
+          <div class="editor-wrapper">
+            <textarea id="req-body" class="code-editor" spellcheck="false" placeholder="Enter request body here..."></textarea>
+          </div>
+          <div id="body-feedback" class="feedback-msg"></div>
+        </div>
+
+        <!-- Tab 2: Headers -->
+        <div id="tab-headers" class="tab-content">
+          <div class="tab-toolbar">
+            <span class="text-muted text-sm">Custom request headers sent with webhook:</span>
+            <button id="btn-add-header" class="btn btn-secondary btn-xs">+ Add Header</button>
+          </div>
+          <div id="headers-table-container">
+            <table class="headers-table">
+              <thead>
+                <tr>
+                  <th style="width: 40%;">Header Name</th>
+                  <th style="width: 50%;">Value</th>
+                  <th style="width: 10%;"></th>
+                </tr>
+              </thead>
+              <tbody id="headers-table-body">
+                <!-- Dynamically populated -->
+              </tbody>
+            </table>
+          </div>
+        </div>
+
+        <!-- Tab 3: Signatures -->
+        <div id="tab-signatures" class="tab-content">
+          <div class="signature-config-card">
+            <h4>Cryptographic Signature Simulation</h4>
+            <p class="text-muted text-sm">
+              Generates compliant HMAC signatures using the Web Crypto API. Test secrets are stored strictly on this machine in local storage and never leave your browser.
+            </p>
+            <div class="form-group">
+              <label for="sig-scheme">Signature Scheme:</label>
+              <select id="sig-scheme" class="form-control">
+                <option value="none">None (No signature)</option>
+                <option value="stripe">Stripe (Stripe-Signature: t=timestamp,v1=hmac_sha256)</option>
+                <option value="github">GitHub (X-Hub-Signature-256: sha256=hmac_sha256)</option>
+                <option value="shopify">Shopify (X-Shopify-Hmac-Sha256: base64_hmac_sha256)</option>
+                <option value="generic">Generic HMAC-SHA256 (Custom Header)</option>
+              </select>
+            </div>
+
+            <div id="sig-details-wrapper" style="display: none;">
+              <div class="form-group" id="group-generic-header" style="display: none;">
+                <label for="sig-header-name">Header Name:</label>
+                <input type="text" id="sig-header-name" class="form-control" value="X-Signature-SHA256">
+              </div>
+              <div class="form-group">
+                <label for="sig-secret">Test Signing Secret (e.g. whsec_...):</label>
+                <div class="secret-input-wrapper">
+                  <input type="password" id="sig-secret" class="form-control" placeholder="Enter signing secret" value="whsec_test_secret_123456789">
+                  <button id="btn-toggle-secret" class="btn btn-outline btn-xs" type="button">Show</button>
+                </div>
+              </div>
+              <div class="signature-preview-box">
+                <div class="preview-label">Live Computed Header:</div>
+                <code id="sig-preview-value" class="preview-code">Select a scheme and enter secret to compute</code>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Tab 4: Variables -->
+        <div id="tab-variables" class="tab-content">
+          <div class="variables-doc-card">
+            <h4>Dynamic Variable Substitution</h4>
+            <p class="text-muted text-sm">Use these tokens anywhere in your URL, headers, or body. They are evaluated right before sending or on clicking "Substitute Variables":</p>
+            <table class="variables-table">
+              <thead>
+                <tr>
+                  <th>Token</th>
+                  <th>Description</th>
+                  <th>Example Value</th>
+                </tr>
+              </thead>
+              <tbody>
+                <tr>
+                  <td><code>{{timestamp}}</code></td>
+                  <td>Current Unix timestamp (seconds)</td>
+                  <td><span class="sample-var" id="var-sample-timestamp">1700000000</span></td>
+                </tr>
+                <tr>
+                  <td><code>{{iso_timestamp}}</code></td>
+                  <td>ISO-8601 formatted date string</td>
+                  <td><span class="sample-var" id="var-sample-iso">2026-10-22T01:30:00Z</span></td>
+                </tr>
+                <tr>
+                  <td><code>{{uuid}}</code></td>
+                  <td>RFC-4122 v4 UUID</td>
+                  <td><span class="sample-var" id="var-sample-uuid">e408...46a2</span></td>
+                </tr>
+                <tr>
+                  <td><code>{{random_int}}</code></td>
+                  <td>Random 5-digit integer</td>
+                  <td><span class="sample-var" id="var-sample-int">48201</span></td>
+                </tr>
+                <tr>
+                  <td><code>{{random_email}}</code></td>
+                  <td>Random developer test email</td>
+                  <td><span class="sample-var" id="var-sample-email">dev_5021@example.localhost</span></td>
+                </tr>
+              </tbody>
+            </table>
+          </div>
+        </div>
+
+        <!-- Response Inspection Panel -->
+        <section class="response-section">
+          <div class="response-header">
+            <div class="response-title-group">
+              <h3>Response Inspector</h3>
+              <span id="res-status-badge" class="status-badge badge-idle">Ready</span>
+              <span id="res-timing" class="metric-label">- ms</span>
+              <span id="res-size" class="metric-label">- B</span>
+            </div>
+            <div class="response-actions">
+              <button id="btn-copy-response" class="btn btn-outline btn-xs">Copy Body</button>
+              <button class="tab-btn-res active" data-res-tab="res-tab-body">Body</button>
+              <button class="tab-btn-res" data-res-tab="res-tab-headers">Headers</button>
+              <button class="tab-btn-res" data-res-tab="res-tab-diff">Diff vs Previous</button>
+            </div>
+          </div>
+
+          <!-- Response Body Tab -->
+          <div id="res-tab-body" class="res-tab-content active">
+            <pre id="res-body-content" class="response-pre">Send a request to view the response payload.</pre>
+          </div>
+
+          <!-- Response Headers Tab -->
+          <div id="res-tab-headers" class="res-tab-content">
+            <pre id="res-headers-content" class="response-pre">No response headers yet.</pre>
+          </div>
+
+          <!-- Response Diff Tab -->
+          <div id="res-tab-diff" class="res-tab-content">
+            <div id="res-diff-content" class="diff-container">
+              <div class="text-muted text-sm">Send at least two requests to see a line-by-line payload difference.</div>
+            </div>
+          </div>
+        </section>
+      </main>
+    </div>
+  </div>
+
+  <script type="module" src="composer.js"></script>
+</body>
+</html>

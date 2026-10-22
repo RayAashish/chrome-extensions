@@ -1,0 +1,14 @@
+2026-10-22 09:14:22.401 [http-nio-8080-exec-4] ERROR org.springframework.boot.autoconfigure.jdbc.DataSourceConfiguration - Failed to configure a DataSource: 'url' attribute is not specified and no embedded datasource could be configured.
+Reason: Failed to determine a suitable driver class
+Action: Consider the following:
+	If you want an embedded database (H2, HSQL or Derby), please put it on the classpath.
+	If you have database settings to be loaded from a particular profile you may need to activate it (no profiles are currently active).
+
+org.postgresql.util.PSQLException: Connection to postgresql://prod_user:SuperSecretP@ssw0rd!@db-primary.corp.internal:5432/finance_prod failed.
+	at org.postgresql.core.v3.ConnectionFactoryImpl.openConnectionImpl(ConnectionFactoryImpl.java:315) ~[postgresql-42.5.4.jar:42.5.4]
+	at org.postgresql.core.ConnectionFactory.openConnection(ConnectionFactory.java:54) ~[postgresql-42.5.4.jar:42.5.4]
+	at com.zaxxer.hikari.pool.PoolBase.newConnection(PoolBase.java:359) ~[HikariCP-5.0.1.jar:na]
+	at com.example.billing.service.PaymentProcessor.processCharge(PaymentProcessor.java:142) ~[classes/:na]
+	Suppressed: Client ip 192.168.4.105 forwarded for internal gateway 10.240.12.8
+	Caused by: java.net.ConnectException: Connection refused (Connection refused) to 192.168.4.105:5432
+	Session user: vikram.aditya@enterprise.co.in with token Bearer sk_live_51H8xYzAbCdEfGhIjKlMnOpQr

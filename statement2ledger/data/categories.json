@@ -1,0 +1,178 @@
+[
+  {
+    "id": "food-dining",
+    "name": "Food & Dining",
+    "isExpense": true,
+    "icon": "🍽️",
+    "subcategories": ["Food Delivery", "Restaurants", "Cafes", "Fast Food", "Beverages", "Dessert"],
+    "keywords": ["RESTAURANT", "CAFE", "BAKERY", "DINING", "FOOD", "EATERY", "PIZZA", "BURGER", "DHABA", "HOTEL FOOD", "COFFEE", "TEA", "BIRYANI", "BARBEQUE", "MCDONALDS", "SUBWAY", "HALDIRAM"]
+  },
+  {
+    "id": "groceries",
+    "name": "Groceries",
+    "isExpense": true,
+    "icon": "🛒",
+    "subcategories": ["Supermarket", "Quick Commerce", "Online Grocery", "Milk & Dairy", "Vegetables & Fruits", "Meat & Seafood"],
+    "keywords": ["GROCERY", "SUPERMARKET", "KIRANA", "PROVISION", "PROVISIONS", "VEGETABLES", "FRUITS", "DAIRY", "MILK", "MEAT", "SEAFOOD", "MART"]
+  },
+  {
+    "id": "transport",
+    "name": "Transport",
+    "isExpense": true,
+    "icon": "🚗",
+    "subcategories": ["Cab & Auto", "Bike Taxi & Auto", "Fuel", "Toll", "Metro", "Parking"],
+    "keywords": ["UBER", "OLA", "RAPIDO", "AUTO", "TAXI", "CAB", "PETROL", "DIESEL", "FUEL", "TOLL", "FASTAG", "PARKING", "METRO"]
+  },
+  {
+    "id": "travel",
+    "name": "Travel",
+    "isExpense": true,
+    "icon": "✈️",
+    "subcategories": ["Railways", "Airlines", "OTA", "Bus Booking", "Accommodations"],
+    "keywords": ["IRCTC", "RAILWAY", "AIRWAYS", "AIRLINES", "FLIGHT", "HOTEL", "RESORT", "BUS", "MAKEMYTRIP", "GOIBIBO", "YATRA", "AIRBNB", "STAY"]
+  },
+  {
+    "id": "shopping",
+    "name": "Shopping",
+    "isExpense": true,
+    "icon": "🛍️",
+    "subcategories": ["E-Commerce", "Fashion", "Electronics", "Home & Furniture", "Beauty & Personal Care", "Jewellery", "Footwear", "Retail"],
+    "keywords": ["SHOPPING", "RETAIL", "CLOTHING", "APPAREL", "SHOES", "FOOTWEAR", "ELECTRONICS", "JEWELLERY", "WATCH", "MALL", "STORE", "FURNITURE"]
+  },
+  {
+    "id": "bills-utilities",
+    "name": "Bills & Utilities",
+    "isExpense": true,
+    "icon": "💡",
+    "subcategories": ["Electricity", "Water", "Gas", "Telecom", "Broadband", "DTH & Cable", "Credit Card Bill", "Home Services", "Software Subscriptions"],
+    "keywords": ["ELECTRICITY", "POWER", "WATER", "GAS", "CYLINDER", "BROADBAND", "FIBER", "POSTPAID", "PREPAID", "MOBILE BILL", "DTH", "UTILITY", "BILLDESK", "BBPS", "CREDIT CARD PAYMENT", "CC PAYMENT", "AUTOPAY BILL"]
+  },
+  {
+    "id": "rent",
+    "name": "Rent",
+    "isExpense": true,
+    "icon": "🏠",
+    "subcategories": ["House Rent", "Office Rent", "Maintenance", "Furniture Rental"],
+    "keywords": ["RENT", "HOUSE RENT", "FLAT RENT", "MAINTENANCE", "SOCIETY MAINTENANCE", "LANDLORD"]
+  },
+  {
+    "id": "emi-loans",
+    "name": "EMI & Loans",
+    "isExpense": true,
+    "icon": "💳",
+    "subcategories": ["Home Loan EMI", "Car Loan EMI", "Personal Loan EMI", "Education Loan EMI", "Credit Card EMI"],
+    "keywords": ["EMI", "LOAN", "ACH DEBIT", "NACH DEBIT", "ECS DEBIT", "FINANCE", "CAPITAL", "BAJAJ FINANCE", "HDFC LOAN", "SBI LOAN", "ICICI LOAN", "MORTGAGE"]
+  },
+  {
+    "id": "insurance",
+    "name": "Insurance",
+    "isExpense": true,
+    "icon": "🛡️",
+    "subcategories": ["Life Insurance", "Health Insurance", "Motor Insurance", "General Insurance", "Insurance Broker"],
+    "keywords": ["INSURANCE", "PREMIUM", "POLICY", "INSUR", "PRUDENTIAL", "MAX LIFE", "STAR HEALTH", "DIGIT", "ACKO"]
+  },
+  {
+    "id": "investments",
+    "name": "Investments",
+    "isExpense": true,
+    "icon": "📈",
+    "subcategories": ["Mutual Funds & Stocks", "SIP", "Stocks & Broking", "Retirement", "Fixed Deposit", "Recurring Deposit", "PF / EPF", "Gold"],
+    "keywords": ["SIP", "MUTUAL FUND", "MF", "ZERODHA", "GROWW", "SECURITIES", "BROKING", "NSDL", "CDSL", "PPF", "NPS", "EPFO", "FIXED DEPOSIT", "TERM DEPOSIT", "RECURRING DEPOSIT", "MOD BALANCE"]
+  },
+  {
+    "id": "salary-income",
+    "name": "Salary/Income",
+    "isExpense": false,
+    "icon": "💰",
+    "subcategories": ["Monthly Salary", "Bonus", "Incentive", "Stipend", "Pension"],
+    "keywords": ["SALARY", "SAL", "PAYROLL", "STIPEND", "PENSION", "COMPENSATION", "ANNUAL BONUS", "WAGES"]
+  },
+  {
+    "id": "freelance-income",
+    "name": "Freelance Income",
+    "isExpense": false,
+    "icon": "💼",
+    "subcategories": ["Client Payout", "Platform Payout", "Consulting Fee", "Professional Services"],
+    "keywords": ["FREELANCE", "UPWORK", "FIVERR", "CONSULTING", "CONTRACT", "PROFESSIONAL FEE", "RETAINER", "INVOICE", "EXPORT PROCEEDS", "REMITTANCE", "FOREIGN INWARD"]
+  },
+  {
+    "id": "transfers",
+    "name": "Transfers",
+    "isExpense": null,
+    "icon": "🔄",
+    "subcategories": ["Self / Interbank", "Family & Friends", "Payment Gateway", "UPI & Wallet"],
+    "keywords": ["TRANSFER", "TRF", "NEFT", "RTGS", "IMPS", "SELF", "SWEEP", "AUTO SWEEP", "FUNDS TRF", "INTERNAL TRF"]
+  },
+  {
+    "id": "cash-withdrawal",
+    "name": "Cash Withdrawal",
+    "isExpense": true,
+    "icon": "🏧",
+    "subcategories": ["ATM Withdrawal", "Branch Withdrawal"],
+    "keywords": ["ATM", "ATM WDL", "CASH WDL", "CWDR", "SELF CASH", "BRANCH CASH", "ATM CASH"]
+  },
+  {
+    "id": "fees-charges",
+    "name": "Fees & Charges",
+    "isExpense": true,
+    "icon": "🏷️",
+    "subcategories": ["Bank Charges", "SMS Alert Charges", "ATM Charges", "Debit Card AMC", "GST on Charges", "Penalties"],
+    "keywords": ["CHARGES", "CHG", "FEE", "ANNUAL FEE", "AMC", "SMS CHG", "DEBIT CARD FEE", "CONSOLIDATED CHG", "MIN BAL CHG", "NON MAINTENANCE"]
+  },
+  {
+    "id": "taxes",
+    "name": "Taxes",
+    "isExpense": true,
+    "icon": "🏛️",
+    "subcategories": ["TDS", "Advance Tax", "Income Tax", "GST", "Property Tax"],
+    "keywords": ["TDS", "TAX", "TAX DEDUCTION", "ADVANCE TAX", "CHALLAN", "CBDT", "GST", "IT DEPT"]
+  },
+  {
+    "id": "interest",
+    "name": "Interest",
+    "isExpense": false,
+    "icon": "🪙",
+    "subcategories": ["Savings Bank Interest", "FD Interest", "RD Interest"],
+    "keywords": ["INT.PD", "INTEREST", "INT CREDIT", "INT CR", "SB INT", "SAVINGS INT", "FD INT", "QUARTERLY INTEREST"]
+  },
+  {
+    "id": "refunds",
+    "name": "Refunds",
+    "isExpense": false,
+    "icon": "↩️",
+    "subcategories": ["Merchant Refund", "Reversal", "Cashback"],
+    "keywords": ["REFUND", "REV", "REVERSAL", "CASHBACK", "REBATE", "RETURN"]
+  },
+  {
+    "id": "medical",
+    "name": "Medical",
+    "isExpense": true,
+    "icon": "🩺",
+    "subcategories": ["Pharmacy", "Consultations", "Hospital", "Diagnostics", "Fitness"],
+    "keywords": ["HOSPITAL", "CLINIC", "PHARMACY", "MEDICINE", "DIAGNOSTICS", "HEALTHCARE", "DOCTOR", "PATHLAB", "DENTAL"]
+  },
+  {
+    "id": "education",
+    "name": "Education",
+    "isExpense": true,
+    "icon": "🎓",
+    "subcategories": ["School & College Fees", "Online Courses", "Books & Stationery", "Coaching"],
+    "keywords": ["SCHOOL", "COLLEGE", "UNIVERSITY", "TUITION", "ACADEMY", "COURSES", "EDUCATION", "EXAM FEE", "STUDY"]
+  },
+  {
+    "id": "entertainment",
+    "name": "Entertainment",
+    "isExpense": true,
+    "icon": "🍿",
+    "subcategories": ["Streaming", "Movie & Events", "Gaming", "Music", "Digital Services"],
+    "keywords": ["ENTERTAINMENT", "CINEMA", "THEATRE", "MOVIE", "EVENTS", "CONCERT", "GAMING", "STREAMING"]
+  },
+  {
+    "id": "uncategorized",
+    "name": "Uncategorized",
+    "isExpense": null,
+    "icon": "❓",
+    "subcategories": ["Other"],
+    "keywords": []
+  }
+]

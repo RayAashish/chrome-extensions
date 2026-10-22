@@ -1,0 +1,74 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Smart PII Sanitizer</title>
+  <link rel="stylesheet" href="popup.css">
+</head>
+<body>
+  <div class="popup-card">
+    <header class="popup-header">
+      <div class="brand">
+        <svg viewBox="0 0 128 128" width="22" height="22">
+          <path d="M64 12 C96 12 112 28 112 56 C112 88 84 112 64 120 C44 112 16 88 16 56 C16 28 32 12 64 12 Z" fill="#3b82f6"/>
+          <rect x="42" y="56" width="44" height="34" rx="6" fill="#ffffff"/>
+          <path d="M50 56 V44 C50 36.268 56.268 30 64 30 C71.732 30 78 36.268 78 44 V56" fill="none" stroke="#ffffff" stroke-width="7" stroke-linecap="round"/>
+          <circle cx="64" cy="70" r="4.5" fill="#10b981"/>
+        </svg>
+        <span class="brand-name">Smart PII Sanitizer</span>
+      </div>
+      <span class="status-pill" id="statusPill">Active</span>
+    </header>
+
+    <div class="stats-box">
+      <div class="stat-item">
+        <span class="stat-value" id="vaultItemCount">0</span>
+        <span class="stat-label">Vault Tokens</span>
+      </div>
+      <div class="stat-item">
+        <span class="stat-value" id="sensitivityLabel">Balanced</span>
+        <span class="stat-label">Mode</span>
+      </div>
+    </div>
+
+    <div class="actions-list">
+      <button id="openSidePanelBtn" class="btn-primary-action">
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+          <rect x="3" y="3" width="18" height="18" rx="2" ry="2"/>
+          <line x1="15" y1="3" x2="15" y2="21"/>
+        </svg>
+        Open Side Panel Workspace
+      </button>
+
+      <button id="quickSanitizeClipboardBtn" class="btn-secondary-action">
+        <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+          <path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/>
+        </svg>
+        Sanitize Clipboard
+      </button>
+
+      <button id="quickReverseClipboardBtn" class="btn-secondary-action">
+        <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+          <path d="M3 12a9 9 0 1 0 9-9 9.75 9.75 0 0 0-6.74 2.74L3 8"/>
+          <path d="M3 3v5h5"/>
+        </svg>
+        Reverse-Map Clipboard
+      </button>
+    </div>
+
+    <div class="toggle-row">
+      <label for="autoSanitizeToggle">Auto-sanitize on paste</label>
+      <input type="checkbox" id="autoSanitizeToggle">
+    </div>
+
+    <footer class="popup-footer">
+      <a href="#" id="openOptionsLink">Settings & Rules</a>
+      <span class="divider">•</span>
+      <span class="privacy-note">100% Local / Zero Network</span>
+    </footer>
+  </div>
+
+  <script type="module" src="popup.js"></script>
+</body>
+</html>

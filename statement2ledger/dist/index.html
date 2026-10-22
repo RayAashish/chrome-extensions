@@ -1,0 +1,96 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <meta
+      http-equiv="Content-Security-Policy"
+      content="default-src 'self'; connect-src 'none'; img-src 'self' data: blob:; script-src 'self' 'wasm-unsafe-eval'; worker-src 'self' blob:; style-src 'self' 'unsafe-inline'; object-src 'none'; base-uri 'none'; form-action 'none';"
+    />
+    <title>Statement2Ledger - Convert Indian Bank Statements (HDFC, SBI, ICICI) to Excel Offline</title>
+    <meta
+      name="description"
+      content="Convert HDFC, SBI, ICICI bank statements (PDF, CSV) into standardized clean Excel and CSV ledgers 100% inside your browser. Zero network calls, zero data tracking, works offline."
+    />
+    <meta
+      name="keywords"
+      content="HDFC statement PDF to Excel, SBI statement to CSV, ICICI bank statement parser, convert bank statement to excel offline, Indian bank statement converter, zero network privacy finance"
+    />
+    <link rel="icon" type="image/svg+xml" href="./favicon.svg" />
+    <link rel="manifest" href="./manifest.json" />
+    <meta name="theme-color" content="#1e293b" />
+
+    <!-- Open Graph / Facebook -->
+    <meta property="og:type" content="website" />
+    <meta property="og:title" content="Statement2Ledger - Client-Side Indian Bank Statement Converter" />
+    <meta
+      property="og:description"
+      content="Turn encrypted Indian bank statement PDFs and CSVs into clean, audit-ready Excel ledgers with 100% privacy and zero network calls."
+    />
+    <meta property="og:image" content="./favicon.svg" />
+
+    <!-- Twitter -->
+    <meta name="twitter:card" content="summary" />
+    <meta name="twitter:title" content="Statement2Ledger - Bank Statement to Excel (100% Offline)" />
+    <meta
+      name="twitter:description"
+      content="Convert HDFC, SBI, ICICI bank statements directly in your browser. Zero data leaves your machine."
+    />
+
+    <!-- FAQ & WebApp Schema Markup -->
+    <script type="application/ld+json">
+      {
+        "@context": "https://schema.org",
+        "@graph": [
+          {
+            "@type": "WebApplication",
+            "name": "Statement2Ledger",
+            "applicationCategory": "FinanceApplication",
+            "operatingSystem": "All modern browsers (Chrome, Firefox, Safari, Edge)",
+            "offers": {
+              "@type": "Offer",
+              "price": "0",
+              "priceCurrency": "INR"
+            },
+            "description": "Convert Indian bank statements (PDF, CSV) to standardized Excel ledgers client-side with zero network requests."
+          },
+          {
+            "@type": "FAQPage",
+            "mainEntity": [
+              {
+                "@type": "Question",
+                "name": "Is my bank statement uploaded to any server?",
+                "acceptedAnswer": {
+                  "@type": "Answer",
+                  "text": "No. Statement2Ledger processes 100% of your document locally in your browser using WebAssembly. The page enforces connect-src 'none' CSP so no network requests can leave your device."
+                }
+              },
+              {
+                "@type": "Question",
+                "name": "Can I convert password protected bank PDFs?",
+                "acceptedAnswer": {
+                  "@type": "Answer",
+                  "text": "Yes. When you load a password-protected statement from HDFC, SBI, or ICICI, the browser prompts you for your password and unlocks it in memory without storing it."
+                }
+              },
+              {
+                "@type": "Question",
+                "name": "Does Statement2Ledger verify running balance?",
+                "acceptedAnswer": {
+                  "@type": "Answer",
+                  "text": "Yes. The mathematical reconciliation engine audits every line: Previous Balance + Credit - Debit equals Stated Balance using integer paise arithmetic."
+                }
+              }
+            ]
+          }
+        ]
+      }
+    </script>
+    <script src="./config.js"></script>
+    <script type="module" crossorigin src="./assets/index-CeXSlwpU.js"></script>
+    <link rel="stylesheet" crossorigin href="./assets/index-WlqR_nbR.css">
+  </head>
+  <body>
+    <div id="app"></div>
+  </body>
+</html>

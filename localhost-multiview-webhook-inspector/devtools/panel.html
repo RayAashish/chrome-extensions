@@ -1,0 +1,82 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>Local Inspector Panel</title>
+  <link rel="stylesheet" href="panel.css">
+</head>
+<body>
+  <div class="panel-layout">
+    <header class="panel-header">
+      <div class="panel-title">
+        <span class="panel-icon">📡</span>
+        <h2>Local Outbound Inspector</h2>
+        <span class="badge">Localhost & 127.0.0.1</span>
+      </div>
+      <div class="panel-controls">
+        <input type="text" id="filter-input" class="form-control form-control-sm" placeholder="Filter requests...">
+        <button id="btn-clear" class="btn btn-secondary btn-sm">Clear</button>
+      </div>
+    </header>
+
+    <div class="panel-content">
+      <!-- Left: Request Table -->
+      <div class="table-container">
+        <table class="requests-table">
+          <thead>
+            <tr>
+              <th style="width: 70px;">Status</th>
+              <th style="width: 70px;">Method</th>
+              <th>Endpoint URL</th>
+              <th style="width: 80px;">Time</th>
+            </tr>
+          </thead>
+          <tbody id="requests-tbody">
+            <!-- Dynamically populated -->
+          </tbody>
+        </table>
+        <div id="empty-state" class="empty-state">
+          Listening for network requests to localhost endpoints...
+        </div>
+      </div>
+
+      <!-- Right: Request/Response Details -->
+      <aside class="details-pane" id="details-pane" style="display: none;">
+        <div class="details-header">
+          <h3 id="details-title">Request Details</h3>
+          <button id="btn-send-to-composer" class="btn btn-primary btn-sm">Send to Webhook Composer</button>
+        </div>
+
+        <div class="details-body">
+          <div class="details-section">
+            <h4>General</h4>
+            <div id="general-info" class="meta-info"></div>
+          </div>
+
+          <div class="details-section">
+            <h4>Request Headers</h4>
+            <pre id="req-headers" class="code-block"></pre>
+          </div>
+
+          <div class="details-section">
+            <h4>Request Payload</h4>
+            <pre id="req-body" class="code-block"></pre>
+          </div>
+
+          <div class="details-section">
+            <h4>Response Headers</h4>
+            <pre id="res-headers" class="code-block"></pre>
+          </div>
+
+          <div class="details-section">
+            <h4>Response Body</h4>
+            <pre id="res-body" class="code-block"></pre>
+          </div>
+        </div>
+      </aside>
+    </div>
+  </div>
+
+  <script type="module" src="panel.js"></script>
+</body>
+</html>

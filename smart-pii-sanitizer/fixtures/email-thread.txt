@@ -1,0 +1,23 @@
+From: Vikram Sharma <vikram.sharma@fintechcloud.com>
+To: Priya Patel <priya.patel@partnercorp.in>
+Date: Thu, Oct 22, 2026 at 10:15 AM
+Subject: Re: API Integration & Test Account Credentials
+
+Hi Priya,
+
+Thanks for reaching out. We have provisioned the sandbox environment for your integration testing.
+
+Here are the setup details:
+- Contact Phone: +1 (555) 018-9921
+- Direct Support: vikram.sharma@fintechcloud.com
+- Test PAN ID: ABCDE1234F
+- Test Aadhaar: 9876 5432 1098
+- Callback Endpoint: https://webhook.partnercorp.internal/v1/payments
+
+Please test with this sandbox key:
+sk_test_51H8xYzAbCdEfGhIjKlMnOpQr
+
+Best regards,
+Vikram Sharma
+Lead Solutions Architect
+FintechCloud Global Inc.

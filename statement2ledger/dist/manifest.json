@@ -1,0 +1,16 @@
+{
+  "name": "Statement2Ledger",
+  "short_name": "Statement2Ledger",
+  "description": "Convert Indian bank statements (PDF, CSV) into standardized ledgers 100% offline in your browser.",
+  "start_url": "./",
+  "display": "standalone",
+  "background_color": "#0f172a",
+  "theme_color": "#1e293b",
+  "icons": [
+    {
+      "src": "favicon.svg",
+      "sizes": "any",
+      "type": "image/svg+xml"
+    }
+  ]
+}

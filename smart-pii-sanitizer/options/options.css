@@ -1,0 +1,353 @@
+/* Smart PII Sanitizer - Settings Styles */
+* {
+  box-sizing: border-box;
+  margin: 0;
+  padding: 0;
+}
+
+body {
+  font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+  background-color: #0b0f19;
+  color: #f1f5f9;
+  line-height: 1.6;
+  font-size: 14px;
+  padding: 30px 20px;
+}
+
+.settings-wrapper {
+  max-width: 800px;
+  margin: 0 auto;
+  display: flex;
+  flex-direction: column;
+  gap: 24px;
+}
+
+.settings-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding-bottom: 20px;
+  border-bottom: 1px solid #1e293b;
+}
+
+.brand {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+h1 {
+  font-size: 20px;
+  font-weight: 700;
+  color: #f8fafc;
+}
+
+.subtitle {
+  font-size: 13px;
+  color: #94a3b8;
+}
+
+.settings-card {
+  background-color: #111827;
+  border: 1px solid #1f2937;
+  border-radius: 12px;
+  padding: 20px;
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+}
+
+h2 {
+  font-size: 16px;
+  font-weight: 600;
+  color: #e2e8f0;
+}
+
+.card-desc {
+  font-size: 13px;
+  color: #9ca3af;
+  margin-top: -6px;
+}
+
+.checkbox-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(320px, 1fr));
+  gap: 12px;
+  margin-top: 6px;
+}
+
+.checkbox-item {
+  display: flex;
+  align-items: flex-start;
+  gap: 10px;
+  background: #1f2937;
+  padding: 12px;
+  border-radius: 8px;
+  border: 1px solid #374151;
+  cursor: pointer;
+  transition: border-color 0.15s ease;
+}
+
+.checkbox-item:hover {
+  border-color: #3b82f6;
+}
+
+.checkbox-item input[type="checkbox"] {
+  margin-top: 3px;
+  width: 16px;
+  height: 16px;
+  accent-color: #3b82f6;
+  cursor: pointer;
+}
+
+.label-title {
+  display: block;
+  font-weight: 600;
+  font-size: 13px;
+  color: #f3f4f6;
+}
+
+.label-desc {
+  display: block;
+  font-size: 12px;
+  color: #9ca3af;
+}
+
+.radio-group {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.radio-card {
+  display: flex;
+  align-items: flex-start;
+  gap: 12px;
+  background: #1f2937;
+  border: 1px solid #374151;
+  padding: 12px 14px;
+  border-radius: 8px;
+  cursor: pointer;
+  transition: all 0.15s ease;
+}
+
+.radio-card:hover {
+  border-color: #3b82f6;
+}
+
+.radio-card input[type="radio"] {
+  margin-top: 4px;
+  accent-color: #3b82f6;
+  cursor: pointer;
+}
+
+.radio-title {
+  display: block;
+  font-weight: 600;
+  color: #f3f4f6;
+  font-size: 13px;
+}
+
+.radio-desc {
+  display: block;
+  font-size: 12px;
+  color: #9ca3af;
+}
+
+textarea {
+  width: 100%;
+  background: #1f2937;
+  border: 1px solid #374151;
+  border-radius: 8px;
+  color: #f3f4f6;
+  font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
+  font-size: 13px;
+  padding: 12px;
+  outline: none;
+  resize: vertical;
+}
+
+textarea:focus {
+  border-color: #3b82f6;
+}
+
+.custom-rule-form {
+  display: grid;
+  grid-template-columns: 2fr 3fr 2fr 1fr;
+  gap: 8px;
+}
+
+input[type="text"], input[type="password"], select {
+  background: #1f2937;
+  border: 1px solid #374151;
+  border-radius: 6px;
+  color: #f3f4f6;
+  padding: 8px 12px;
+  font-size: 13px;
+  outline: none;
+}
+
+input:focus, select:focus {
+  border-color: #3b82f6;
+}
+
+.rules-table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 13px;
+}
+
+.rules-table th {
+  background: #1f2937;
+  color: #9ca3af;
+  text-align: left;
+  padding: 8px 10px;
+  border-bottom: 1px solid #374151;
+}
+
+.rules-table td {
+  padding: 8px 10px;
+  border-bottom: 1px solid #374151;
+  font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
+  font-size: 12px;
+}
+
+.empty-rules {
+  text-align: center;
+  color: #6b7280;
+  padding: 16px !important;
+  font-family: -apple-system, BlinkMacSystemFont, sans-serif !important;
+}
+
+.btn-primary {
+  background: #2563eb;
+  color: #ffffff;
+  border: none;
+  border-radius: 6px;
+  padding: 8px 16px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: background 0.15s ease;
+}
+
+.btn-primary:hover {
+  background: #1d4ed8;
+}
+
+.btn-secondary {
+  background: #374151;
+  color: #e5e7eb;
+  border: 1px solid #4b5563;
+  border-radius: 6px;
+  padding: 8px 12px;
+  font-size: 13px;
+  font-weight: 500;
+  cursor: pointer;
+}
+
+.btn-secondary:hover {
+  background: #4b5563;
+}
+
+.encryption-box {
+  background: #1f2937;
+  border: 1px solid #374151;
+  border-radius: 8px;
+  padding: 14px;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.passphrase-area {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  padding-left: 26px;
+}
+
+.passphrase-area.hidden {
+  display: none;
+}
+
+.passphrase-hint {
+  font-size: 11px;
+  color: #fbbf24;
+}
+
+.sites-list {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.site-item {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  background: #1f2937;
+  border: 1px solid #374151;
+  border-radius: 8px;
+  padding: 10px 14px;
+}
+
+.site-name {
+  font-weight: 600;
+  font-size: 13px;
+}
+
+.site-origin {
+  font-size: 12px;
+  color: #9ca3af;
+  margin-left: 8px;
+}
+
+.site-badge {
+  font-size: 11px;
+  padding: 2px 8px;
+  border-radius: 12px;
+  font-weight: 500;
+}
+
+.badge-granted {
+  background: rgba(16, 185, 129, 0.2);
+  color: #34d399;
+  border: 1px solid rgba(16, 185, 129, 0.4);
+}
+
+.badge-unassigned {
+  background: rgba(100, 116, 139, 0.2);
+  color: #94a3b8;
+  border: 1px solid rgba(100, 116, 139, 0.4);
+}
+
+.btn-perm {
+  padding: 4px 10px;
+  font-size: 12px;
+  border-radius: 4px;
+  cursor: pointer;
+  border: 1px solid #4b5563;
+  background: #374151;
+  color: #f3f4f6;
+}
+
+.btn-perm:hover {
+  background: #4b5563;
+}
+
+.save-footer {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  margin-top: 10px;
+}
+
+.save-status {
+  color: #34d399;
+  font-weight: 600;
+  font-size: 13px;
+}
+
+.save-status.hidden {
+  display: none;
+}

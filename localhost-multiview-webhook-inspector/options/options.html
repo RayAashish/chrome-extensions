@@ -1,0 +1,89 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>Options - Localhost Multi-View & Webhook Inspector</title>
+  <link rel="stylesheet" href="options.css">
+</head>
+<body>
+  <div class="options-container">
+    <header class="options-header">
+      <div class="brand">
+        <span class="icon">📐</span>
+        <h1>Settings & Preferences</h1>
+      </div>
+      <p class="subtitle">Localhost Multi-View & Webhook Inspector</p>
+    </header>
+
+    <main class="options-main">
+      <!-- Section 1: Synchronization & Performance -->
+      <section class="config-card">
+        <h2>Synchronization & Performance</h2>
+        <div class="form-row">
+          <label class="toggle-control">
+            <input type="checkbox" id="opt-hover-sync">
+            <span class="toggle-slider"></span>
+            <span class="toggle-label">Enable Hover / Mousemove Sync by default</span>
+          </label>
+          <div class="help-text">Disabled by default to prevent unnecessary event traffic on complex web applications.</div>
+        </div>
+
+        <div class="form-row">
+          <label class="toggle-control">
+            <input type="checkbox" id="opt-low-fidelity">
+            <span class="toggle-slider"></span>
+            <span class="toggle-label">Reduced Fidelity Mode</span>
+          </label>
+          <div class="help-text">Throttles scroll and input events to 30fps to conserve CPU when testing 3 heavy single-page apps (SPAs) simultaneously.</div>
+        </div>
+      </section>
+
+      <!-- Section 2: Webhook Storage & Privacy -->
+      <section class="config-card">
+        <h2>Webhook Storage & Privacy</h2>
+        <div class="form-row">
+          <label class="toggle-control">
+            <input type="checkbox" id="opt-persist-bodies" checked>
+            <span class="toggle-slider"></span>
+            <span class="toggle-label">Persist Webhook Payload & Response Bodies</span>
+          </label>
+          <div class="help-text">When unchecked, only headers, status, timing, and URLs are stored in history; payload bodies are discarded after execution to minimize storage footprint.</div>
+        </div>
+
+        <div class="form-row">
+          <label for="opt-timeout">Default Request Timeout (ms):</label>
+          <input type="number" id="opt-timeout" class="form-control" value="10000" min="1000" max="60000" step="1000">
+          <div class="help-text">Duration before terminating pending localhost webhook HTTP requests.</div>
+        </div>
+
+        <div class="danger-zone">
+          <h3>Reset & Clear Data</h3>
+          <p class="help-text">Permanently deletes all saved webhook request history, layout configurations, and test signing secrets stored in <code>chrome.storage.local</code>.</p>
+          <button id="btn-clear-all" class="btn btn-danger">Clear All Extension Data</button>
+        </div>
+      </section>
+
+      <!-- Section 3: Security & Header Modifications Transparency -->
+      <section class="config-card">
+        <h2>Security & Header Modifications Transparency</h2>
+        <p class="info-p">
+          To embed localhost pages inside iframes without <code>X-Frame-Options</code> or <code>Content-Security-Policy: frame-ancestors</code> errors, this extension uses Chrome's <code>declarativeNetRequest</code> session rules.
+        </p>
+        <ul class="info-list">
+          <li><strong>Scoped strictly to localhost:</strong> Rules only match requests to <code>localhost</code>, <code>127.0.0.1</code>, <code>[::1]</code>, and <code>*.localhost</code>.</li>
+          <li><strong>Sub-frame only:</strong> Headers are never modified on top-level tabs or internet sites.</li>
+          <li><strong>Session-only:</strong> Rules are automatically erased by Chrome upon browser shutdown and cleaned up when workspaces close.</li>
+          <li><strong>Zero Cloud Telemetry:</strong> Runs 100% locally on your machine with zero third-party network requests.</li>
+        </ul>
+      </section>
+    </main>
+
+    <footer class="options-footer">
+      <button id="btn-save" class="btn btn-primary">Save Settings</button>
+      <span id="save-status" class="save-status"></span>
+    </footer>
+  </div>
+
+  <script type="module" src="options.js"></script>
+</body>
+</html>
