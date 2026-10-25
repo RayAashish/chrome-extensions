@@ -57,3 +57,52 @@ test('Reverse Map - Lingering Unmatched Placeholder Detection', () => {
   assert.equal(restoredCount, 1);
   assert.ok(unmatchedPlaceholders.includes('REDACTED_KEY_999'), 'Surfaces unmatched placeholder warning');
 });
+
+test('Reverse Map - Exact User Issue: Aadhaar round-trip across multiple sanitizations and storage reload', async () => {
+  const { sanitize } = await import('../core/sanitizer.js');
+  const vault = new Vault();
+  const input = `password = Milkhasing@123\nip = 192.168.1.1\npan = HONET6085M\naadhar = 5832 9661 7644`;
+
+  // 1. First sanitization pass (testing FORMAT_VALID option)
+  const pass1 = sanitize(input, { vault, placeholderStyles: { AADHAAR: 'FORMAT_VALID' } });
+  assert.ok(pass1.sanitizedText.includes('REDACTED_KEY_1'));
+  assert.ok(pass1.sanitizedText.includes('10.0.0.1'));
+  assert.ok(pass1.sanitizedText.includes('AAAAA1000A'));
+  assert.ok(pass1.sanitizedText.includes('9999 0000 0001'), 'Aadhaar formatted correctly');
+
+  // 2. Simulate storage serialization and reload into a fresh vault
+  const json = vault.toJSON();
+  const vaultReloaded = new Vault();
+  vaultReloaded.fromJSON(json);
+
+  // 3. Second sanitization pass with reloaded vault (must not degrade/deform into 9999  000 0 00)
+  const pass2 = sanitize(input, { vault: vaultReloaded, placeholderStyles: { AADHAAR: 'FORMAT_VALID' } });
+  assert.ok(!pass2.sanitizedText.includes('9999  000 0 00'), 'Must not deform Aadhaar with corrupt gaps');
+  assert.ok(pass2.sanitizedText.includes('9999 0000 0001'), 'Must preserve clean 4-4-4 spacing');
+
+  // 4. Reverse map output of second pass
+  const rev = reverseMap(pass2.sanitizedText, vaultReloaded);
+  assert.equal(rev.restoredCount, 4, 'Must restore all 4 items including Aadhaar');
+  assert.equal(rev.restoredText, input, 'Byte-for-byte round trip');
+  assert.equal(rev.unmatchedPlaceholders.length, 0, 'Zero unmatched');
+});
+
+test('Reverse Map - Aadhaar AI variation tolerance (dashed, unspaced, and deformed spacing)', () => {
+  const vault = new Vault();
+  vault.getOrCreatePlaceholder('5832 9661 7644', 'AADHAAR', 'ID_CARDS', { separator: ' ', placeholderStyle: 'FORMAT_VALID' });
+
+  // Test various deformations an AI chatbot or user might produce:
+  const variants = [
+    'aadhar = 9999 0000 0001',
+    'aadhar = 9999-0000-0001',
+    'aadhar = 999900000001',
+    'aadhar = 9999   0000   0001',
+    'aadhar = 9999  000 0 00'
+  ];
+
+  for (const variant of variants) {
+    const rev = reverseMap(variant, vault);
+    assert.equal(rev.restoredCount, 1, `Must restore variant: "${variant}"`);
+    assert.ok(rev.restoredText.includes('5832 9661 7644'), `Real Aadhaar restored for: "${variant}"`);
+  }
+});

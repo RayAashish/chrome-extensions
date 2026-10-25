@@ -137,10 +137,15 @@ Phone: +91 98765 43210 / 09876543210 / 98765-43210`;
   const vault = new Vault();
   const { sanitizedText } = sanitize(input, { vault });
 
-  // Aadhaar format preservation: must keep spaces, not force dashes
+  // Default TAG mode replaces with REDACTED_AADHAAR_1
   assert.ok(!sanitizedText.includes('2345 6789 0123'), 'Aadhaar redacted');
-  const aadhaarMatch = sanitizedText.match(/Aadhaar:\s*(\d{4}\s\d{4}\s\d{4})/);
-  assert.ok(aadhaarMatch, 'Aadhaar must preserve 4-4-4 space formatting');
+  assert.ok(sanitizedText.includes('REDACTED_AADHAAR_1'), 'Default TAG style for Aadhaar');
+
+  // Aadhaar format preservation in FORMAT_VALID mode: must keep spaces, not force dashes
+  const vaultFmt = new Vault();
+  const resFmt = sanitize(input, { vault: vaultFmt, placeholderStyles: { AADHAAR: 'FORMAT_VALID' } });
+  const aadhaarMatch = resFmt.sanitizedText.match(/Aadhaar:\s*(\d{4}\s\d{4}\s\d{4})/);
+  assert.ok(aadhaarMatch, 'Aadhaar must preserve 4-4-4 space formatting when FORMAT_VALID configured');
 
   // PAN and GSTIN
   assert.ok(!sanitizedText.includes('ABCDE1234F'), 'PAN must be redacted');

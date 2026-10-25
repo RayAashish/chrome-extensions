@@ -128,6 +128,7 @@ export function isPlaceholderTemplate(val) {
   const v = val.trim();
   if (/^<[a-zA-Z0-9_.-]+>$/.test(v)) return true; // e.g. <password>, <token>
   if (/^(?:YOUR_[A-Z0-9_]+|INSERT_[A-Z0-9_]+|REPLACE_[A-Z0-9_]+|TODO|XXXX+)$/.test(v)) return true;
+  if (/^REDACTED_[A-Za-z0-9_]+$/.test(v)) return true;
   return false;
 }
 
@@ -854,8 +855,8 @@ export const DETECTORS = [
         const separator = match[2] || '';
         const digitsOnly = raw.replace(/\D/g, '');
 
-        const precedingText = text.slice(Math.max(0, match.index - 30), match.index).toLowerCase();
-        const hasAadhaarContext = /aadhaar|uidai|uid\b|aadhar/.test(precedingText);
+        const precedingText = text.slice(Math.max(0, match.index - 50), match.index);
+        const hasAadhaarContext = /(?:aadhaar|aadhar|adhar|adhaar)(?:[_\s-]*(?:no|number|num))?|uidai|\buid\b/i.test(precedingText);
 
         if (hasAadhaarContext || isValidVerhoeff(digitsOnly)) {
           matches.push({

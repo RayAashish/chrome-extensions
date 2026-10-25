@@ -23,6 +23,15 @@ const catIdCards = document.getElementById('catIdCards');
 const catContact = document.getElementById('catContact');
 const catNames = document.getElementById('catNames');
 
+const styleAadhaar = document.getElementById('styleAadhaar');
+const styleSsn = document.getElementById('styleSsn');
+const styleCard = document.getElementById('styleCard');
+const stylePan = document.getElementById('stylePan');
+const styleEmail = document.getElementById('styleEmail');
+const styleIp = document.getElementById('styleIp');
+
+const instructionTemplateText = document.getElementById('instructionTemplateText');
+
 const sensitivityRadios = document.querySelectorAll('input[name="sensitivity"]');
 const allowlistText = document.getElementById('allowlistText');
 
@@ -62,6 +71,21 @@ async function loadSavedSettings() {
     catContact.checked = s.enabledCategories.CONTACT !== false;
   }
   catNames.checked = Boolean(s.enableNames);
+
+  // Placeholder Styles (Section 3.A)
+  const styles = s.placeholderStyles || {};
+  if (styleAadhaar) styleAadhaar.value = styles.AADHAAR || 'TAG';
+  if (styleSsn) styleSsn.value = styles.SSN || 'TAG';
+  if (styleCard) styleCard.value = styles.CREDIT_CARD || 'TAG';
+  if (stylePan) stylePan.value = styles.PAN || 'FORMAT_VALID';
+  if (styleEmail) styleEmail.value = styles.EMAIL || 'FORMAT_VALID';
+  if (styleIp) styleIp.value = styles.IPV4 || 'FORMAT_VALID';
+
+  // LLM Instruction Header Template (Section 3.B)
+  if (instructionTemplateText) {
+    instructionTemplateText.value = s.instructionTemplate ||
+      'Note: tokens like {TOKENS} are intentional anonymization placeholders. Keep them exactly as written in your answer; do not mask, reformat, explain or replace them.';
+  }
 
   // Sensitivity
   const sensitivity = s.sensitivity || 'balanced';
@@ -181,7 +205,6 @@ async function renderSitesList() {
 }
 
 function attachEvents() {
-  // Add rule button
   addRuleBtn.addEventListener('click', () => {
     const name = ruleName.value.trim();
     const regex = ruleRegex.value.trim();
@@ -193,7 +216,7 @@ function attachEvents() {
     }
 
     try {
-      new RegExp(regex); // validate regex syntax
+      new RegExp(regex);
     } catch (e) {
       alert(`Invalid regular expression: ${e.message}`);
       return;
@@ -212,7 +235,6 @@ function attachEvents() {
     renderRulesTable();
   });
 
-  // Toggle encrypted persistence passphrase input
   encryptPersistenceToggle.addEventListener('change', () => {
     passphraseArea.classList.toggle('hidden', !encryptPersistenceToggle.checked);
   });
@@ -232,11 +254,26 @@ async function saveAll() {
     .map(line => line.trim())
     .filter(Boolean);
 
+  const placeholderStyles = {
+    AADHAAR: styleAadhaar ? styleAadhaar.value : 'TAG',
+    SSN: styleSsn ? styleSsn.value : 'TAG',
+    CREDIT_CARD: styleCard ? styleCard.value : 'TAG',
+    PAN: stylePan ? stylePan.value : 'FORMAT_VALID',
+    EMAIL: styleEmail ? styleEmail.value : 'FORMAT_VALID',
+    IPV4: styleIp ? styleIp.value : 'FORMAT_VALID'
+  };
+
+  const instructionTemplate = instructionTemplateText
+    ? instructionTemplateText.value.trim()
+    : 'Note: tokens like {TOKENS} are intentional anonymization placeholders. Keep them exactly as written in your answer; do not mask, reformat, explain or replace them.';
+
   const newSettings = {
     sensitivity: selectedSensitivity,
     enableNames: catNames.checked,
     allowlist,
     customRules,
+    placeholderStyles,
+    instructionTemplate,
     autoExpireMinutes: parseInt(autoExpireSelect.value, 10) || 0,
     enabledCategories: {
       EMAIL: catEmail.checked,

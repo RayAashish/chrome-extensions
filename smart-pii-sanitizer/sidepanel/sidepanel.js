@@ -1,12 +1,14 @@
 /**
- * Smart PII Sanitizer - Side Panel Controller (v2.0 Hardened)
+ * Smart PII Sanitizer - Side Panel Controller (v2.1 Tolerant & Assisted Mapping)
  * Real-time mirrored overlay, red sensitive flagging, residual scan,
- * SVG icon buttons with feedback, Reverse Map diagnostics.
+ * SVG icon buttons with feedback, Reverse Map health check strip,
+ * unrecognized redaction token detection, assisted manual mapping modal,
+ * and diagnostic AI test tool.
  */
 
-import { sanitize } from '../core/sanitizer.js';
-import { reverseMap } from '../core/reverse.js';
-import { Vault } from '../core/vault.js';
+import { sanitize, buildLlmInstructionHeader } from '../core/sanitizer.js';
+import { reverseMap, inferCategoryFromToken } from '../core/reverse.js';
+import { Vault, maskRealValue } from '../core/vault.js';
 
 let vault = new Vault();
 let settings = {
@@ -14,15 +16,26 @@ let settings = {
   enableNames: false,
   allowlist: [],
   customRules: [],
-  enabledCategories: {}
+  enabledCategories: {},
+  placeholderStyles: {}
 };
 
 const excludedEntityIds = new Set();
 let debounceTimer = null;
 let lastSanitizedInput = null;
+let lastSanitizedResult = null;
 let lastReversedAiInput = null;
+let currentMappingToken = null;
+let currentMappingCandidatePl = null;
 
-// DOM Elements
+// DOM Elements - Navigation & Theme
+const themeToggleBtn = document.getElementById('themeToggleBtn');
+const openSettingsBtn = document.getElementById('openSettingsBtn');
+const tabButtons = document.querySelectorAll('.tab-btn');
+const tabContents = document.querySelectorAll('.tab-content');
+const vaultBadge = document.getElementById('vaultBadge');
+
+// DOM Elements - Tab 1: Sanitize
 const rawInput = document.getElementById('rawInput');
 const rawInputBackdrop = document.getElementById('rawInputBackdrop');
 const sanitizedOutput = document.getElementById('sanitizedOutput');
@@ -34,11 +47,15 @@ const copySanitizedBtn = document.getElementById('copySanitizedBtn');
 const pasteClipboardBtn = document.getElementById('pasteClipboardBtn');
 const clearInputBtn = document.getElementById('clearInputBtn');
 
+const addInstructionToggle = document.getElementById('addInstructionToggle');
+const instructionHint = document.getElementById('instructionHint');
+
 const liveSummary = document.getElementById('liveSummary');
 const summaryText = document.getElementById('summaryText');
 const entityBadges = document.getElementById('entityBadges');
 const residualAlert = document.getElementById('residualAlert');
 
+// DOM Elements - Tab 2: Reverse Map
 const aiResponseInput = document.getElementById('aiResponseInput');
 const aiResponseBackdrop = document.getElementById('aiResponseBackdrop');
 const restoredOutput = document.getElementById('restoredOutput');
@@ -49,224 +66,255 @@ const reverseMapBtn = document.getElementById('reverseMapBtn');
 const copyRestoredBtn = document.getElementById('copyRestoredBtn');
 const pasteAiReplyBtn = document.getElementById('pasteAiReplyBtn');
 const clearAiReplyBtn = document.getElementById('clearAiReplyBtn');
+
+const healthCheckStrip = document.getElementById('healthCheckStrip');
+const healthIssued = document.getElementById('healthIssued');
+const healthFound = document.getElementById('healthFound');
+const healthRestored = document.getElementById('healthRestored');
+const healthMissing = document.getElementById('healthMissing');
+const healthUnrecognized = document.getElementById('healthUnrecognized');
+const healthDetailsContainer = document.getElementById('healthDetailsContainer');
+
+const unrecognizedTokensSection = document.getElementById('unrecognizedTokensSection');
+const unrecognizedTokensList = document.getElementById('unrecognizedTokensList');
 const reverseStatusBanner = document.getElementById('reverseStatusBanner');
 const reversePlaceholderChips = document.getElementById('reversePlaceholderChips');
 
-const vaultBadge = document.getElementById('vaultBadge');
-const vaultTableBody = document.getElementById('vaultTableBody');
+// DOM Elements - Tab 3: Vault & Aliases
 const clearVaultBtn = document.getElementById('clearVaultBtn');
+const vaultTableBody = document.getElementById('vaultTableBody');
+const aliasesTableBody = document.getElementById('aliasesTableBody');
+const clearAliasesBtn = document.getElementById('clearAliasesBtn');
+const generateAiTestBlockBtn = document.getElementById('generateAiTestBlockBtn');
+const aiTestBlockContainer = document.getElementById('aiTestBlockContainer');
+const aiTestPromptText = document.getElementById('aiTestPromptText');
+const copyAiTestPromptBtn = document.getElementById('copyAiTestPromptBtn');
 
-const themeToggleBtn = document.getElementById('themeToggleBtn');
-const openSettingsBtn = document.getElementById('openSettingsBtn');
-const tabButtons = document.querySelectorAll('.tab-btn');
-const tabContents = document.querySelectorAll('.tab-content');
+// DOM Elements - Assisted Mapping Modal
+const mappingPopoverModal = document.getElementById('mappingPopoverModal');
+const closeMappingModalBtn = document.getElementById('closeMappingModalBtn');
+const cancelMappingBtn = document.getElementById('cancelMappingBtn');
+const confirmMappingBtn = document.getElementById('confirmMappingBtn');
+const popoverTokenLabel = document.getElementById('popoverTokenLabel');
+const popoverCategoryLabel = document.getElementById('popoverCategoryLabel');
+const popoverCandidatesList = document.getElementById('popoverCandidatesList');
 
+// Toast & Live Region
 const clipboardLiveRegion = document.getElementById('clipboardLiveRegion');
 const toastMessage = document.getElementById('toastMessage');
 
-// HTML Escape helper
-function escapeHtml(text) {
-  if (!text) return '';
-  return text
-    .replace(/&/g, '&amp;')
-    .replace(/</g, '&lt;')
-    .replace(/>/g, '&gt;')
-    .replace(/"/g, '&quot;')
-    .replace(/'/g, '&#039;');
-}
-
-// Category to severity class
+// Severity map for visual hierarchy
 function getSeverityLevel(category) {
   switch (category) {
     case 'SECRETS':
-      return 'badge-severity-high';
-    case 'EMAIL':
-    case 'CONTACT':
-    case 'ID_CARDS':
+      return 'badge-severity-critical';
     case 'FINANCIAL':
-      return 'badge-severity-medium';
+    case 'ID_CARDS':
+      return 'badge-severity-high';
     case 'NETWORK':
-    case 'SYSTEM':
-    case 'HOST':
+    case 'CONTACT':
+      return 'badge-severity-medium';
     default:
       return 'badge-severity-low';
   }
 }
 
+// Map detector category to backdrop highlight CSS class
 function getHighlightClass(category) {
   switch (category) {
     case 'SECRETS':
-      return 'hl-secret';
-    case 'EMAIL':
-    case 'CONTACT':
-    case 'ID_CARDS':
+      return 'hl-secrets';
     case 'FINANCIAL':
-      return 'hl-id';
+      return 'hl-financial';
+    case 'ID_CARDS':
+      return 'hl-idcards';
     case 'NETWORK':
-    case 'SYSTEM':
-    case 'HOST':
-    default:
       return 'hl-network';
+    case 'CONTACT':
+      return 'hl-contact';
+    case 'EMAIL':
+      return 'hl-email';
+    default:
+      return 'hl-entity';
   }
 }
 
-// Initialize
-async function init() {
-  await vault.loadFromStorage();
-  await loadSettings();
-  initTheme();
-  updateVaultUI();
-  attachEvents();
+function escapeHtml(str) {
+  if (typeof str !== 'string') return '';
+  return str
+    .replace(/&/g, '&amp;')
+    .replace(/</g, '&lt;')
+    .replace(/>/g, '&gt;')
+    .replace(/"/g, '&quot;')
+    .replace(/'/g, '&#39;');
 }
 
-// Load settings
-async function loadSettings() {
-  if (typeof chrome !== 'undefined' && chrome.storage && chrome.storage.local) {
-    try {
-      const res = await chrome.storage.local.get('smart_pii_settings');
-      if (res && res.smart_pii_settings) {
-        settings = res.smart_pii_settings;
-      }
-    } catch (e) {
-      console.warn('[Smart PII Sanitizer] Failed to load settings:', e);
-    }
-  }
-}
+// Mirrored backdrop highlighter
+function renderMirroredBackdrop(text, spans, container) {
+  if (!container) return;
 
-// Theme handling
-async function initTheme() {
-  if (typeof chrome !== 'undefined' && chrome.storage && chrome.storage.local) {
-    const res = await chrome.storage.local.get('smart_pii_theme');
-    if (res && res.smart_pii_theme === 'light') {
-      document.body.classList.remove('theme-dark');
-      document.body.classList.add('theme-light');
-    }
-  }
-}
-
-function toggleTheme() {
-  const isLight = document.body.classList.contains('theme-light');
-  if (isLight) {
-    document.body.classList.remove('theme-light');
-    document.body.classList.add('theme-dark');
-    chrome.storage?.local?.set({ smart_pii_theme: 'dark' });
-  } else {
-    document.body.classList.remove('theme-dark');
-    document.body.classList.add('theme-light');
-    chrome.storage?.local?.set({ smart_pii_theme: 'light' });
-  }
-}
-
-// Tab navigation
-function switchTab(tabId) {
-  tabButtons.forEach(btn => {
-    const isActive = btn.getAttribute('data-tab') === tabId;
-    btn.classList.toggle('active', isActive);
-    btn.setAttribute('aria-selected', isActive ? 'true' : 'false');
-  });
-
-  tabContents.forEach(content => {
-    content.classList.toggle('active', content.id === tabId);
-  });
-}
-
-// Synchronized scrolling for mirrored backdrop
-function syncScroll(textarea, backdrop) {
-  if (!backdrop) return;
-  backdrop.scrollTop = textarea.scrollTop;
-  backdrop.scrollLeft = textarea.scrollLeft;
-}
-
-// Build mirrored HTML backdrop with safe highlights (capped to protect layout engine)
-function renderMirroredBackdrop(text, spans, backdropEl) {
-  if (!backdropEl) return;
-  if (!text) {
-    backdropEl.innerHTML = '';
+  if (!text || spans.length === 0) {
+    container.textContent = text || '';
     return;
   }
 
-  // Large input safeguard: if text exceeds 120KB (~2500 lines) or spans > 300,
-  // do NOT overwhelm browser layout engine with thousands of DOM nodes.
-  if (text.length > 120000 || (spans && spans.length > 300)) {
-    const safeSpans = (spans || []).slice(0, 150);
-    renderPartialBackdrop(text, safeSpans, backdropEl, true);
-    return;
-  }
+  // Cap number of visual highlights to keep 60 FPS
+  const maxHighlights = 300;
+  const limitedSpans = spans.slice(0, maxHighlights);
 
-  if (!spans || spans.length === 0) {
-    backdropEl.innerHTML = escapeHtml(text) + '\n';
-    return;
-  }
+  limitedSpans.sort((a, b) => a.start - b.start);
 
-  renderPartialBackdrop(text, spans, backdropEl, false);
-}
-
-function renderPartialBackdrop(text, spans, backdropEl, isTruncated = false) {
-  const sorted = [...spans].sort((a, b) => a.start - b.start);
   let html = '';
   let cursor = 0;
 
-  for (const span of sorted) {
+  for (const span of limitedSpans) {
+    if (span.start < cursor) continue;
     if (span.start > cursor) {
       html += escapeHtml(text.slice(cursor, span.start));
     }
-    const matched = text.slice(span.start, span.end);
-    const hlClass = span.hlClass || 'hl-secret';
-    html += `<mark class="hl-span ${hlClass}">${escapeHtml(matched)}</mark>`;
+    const chunk = text.slice(span.start, span.end);
+    html += `<span class="${span.hlClass}">${escapeHtml(chunk)}</span>`;
     cursor = span.end;
   }
 
   if (cursor < text.length) {
-    if (isTruncated && text.length - cursor > 15000) {
-      html += escapeHtml(text.slice(cursor, cursor + 15000)) + '\n...';
-    } else {
-      html += escapeHtml(text.slice(cursor));
-    }
+    html += escapeHtml(text.slice(cursor));
   }
 
-  backdropEl.innerHTML = html + '\n';
+  container.innerHTML = html;
 }
 
-// Attach UI listeners
-function attachEvents() {
-  tabButtons.forEach(btn => {
-    btn.addEventListener('click', () => switchTab(btn.getAttribute('data-tab')));
+// Synchronize scroll between textarea and its backdrop
+function syncScroll(textarea, backdrop) {
+  if (!textarea || !backdrop) return;
+  backdrop.scrollTop = textarea.scrollTop;
+  backdrop.scrollLeft = textarea.scrollLeft;
+}
+
+// Initialize application
+async function init() {
+  await loadSettings();
+  await vault.loadFromStorage();
+  updateVaultUI();
+
+  // Load saved theme
+  const savedTheme = localStorage.getItem('smart_pii_theme') || 'dark';
+  applyTheme(savedTheme);
+
+  // Load instruction toggle state
+  const savedToggle = localStorage.getItem('smart_pii_add_instruction');
+  if (addInstructionToggle) {
+    addInstructionToggle.checked = savedToggle === 'true';
+  }
+
+  setupEventListeners();
+  setupSyncScroll();
+}
+
+async function loadSettings() {
+  if (typeof chrome !== 'undefined' && chrome.storage && chrome.storage.local) {
+    try {
+      const stored = await chrome.storage.local.get('smart_pii_settings');
+      if (stored && stored.smart_pii_settings) {
+        settings = { ...settings, ...stored.smart_pii_settings };
+      }
+    } catch {
+      // Use defaults
+    }
+  }
+}
+
+function applyTheme(theme) {
+  if (theme === 'light') {
+    document.body.classList.remove('theme-dark');
+    document.body.classList.add('theme-light');
+  } else {
+    document.body.classList.remove('theme-light');
+    document.body.classList.add('theme-dark');
+  }
+  localStorage.setItem('smart_pii_theme', theme);
+}
+
+function setupSyncScroll() {
+  const pairs = [
+    [rawInput, rawInputBackdrop],
+    [sanitizedOutput, sanitizedOutputBackdrop],
+    [aiResponseInput, aiResponseBackdrop],
+    [restoredOutput, restoredOutputBackdrop]
+  ];
+
+  pairs.forEach(([ta, bd]) => {
+    if (!ta || !bd) return;
+    ta.addEventListener('scroll', () => syncScroll(ta, bd));
+  });
+}
+
+function setupEventListeners() {
+  // Theme Toggle
+  themeToggleBtn.addEventListener('click', () => {
+    const isDark = document.body.classList.contains('theme-dark');
+    applyTheme(isDark ? 'light' : 'dark');
   });
 
-  themeToggleBtn.addEventListener('click', toggleTheme);
-
+  // Settings page
   openSettingsBtn.addEventListener('click', () => {
-    if (chrome.runtime && chrome.runtime.openOptionsPage) {
+    if (typeof chrome !== 'undefined' && chrome.runtime && chrome.runtime.openOptionsPage) {
       chrome.runtime.openOptionsPage();
+    } else {
+      window.open('../options/options.html', '_blank');
     }
   });
 
-  // Mirrored scrolling
-  rawInput.addEventListener('scroll', () => syncScroll(rawInput, rawInputBackdrop));
-  sanitizedOutput.addEventListener('scroll', () => syncScroll(sanitizedOutput, sanitizedOutputBackdrop));
-  aiResponseInput.addEventListener('scroll', () => syncScroll(aiResponseInput, aiResponseBackdrop));
-  restoredOutput.addEventListener('scroll', () => syncScroll(restoredOutput, restoredOutputBackdrop));
+  // Tab switching
+  tabButtons.forEach(btn => {
+    btn.addEventListener('click', () => {
+      tabButtons.forEach(b => {
+        b.classList.remove('active');
+        b.setAttribute('aria-selected', 'false');
+      });
+      tabContents.forEach(c => c.classList.remove('active'));
 
-  // Live input changes (with large file safety)
+      btn.classList.add('active');
+      btn.setAttribute('aria-selected', 'true');
+      const targetId = btn.getAttribute('data-tab');
+      const targetContent = document.getElementById(targetId);
+      if (targetContent) {
+        targetContent.classList.add('active');
+      }
+
+      if (targetId === 'vaultTab') {
+        updateVaultUI();
+      }
+    });
+  });
+
+  // Instruction Toggle Change
+  if (addInstructionToggle) {
+    addInstructionToggle.addEventListener('change', () => {
+      localStorage.setItem('smart_pii_add_instruction', addInstructionToggle.checked ? 'true' : 'false');
+    });
+  }
+
+  // Real-time debounce scanning
   rawInput.addEventListener('input', () => {
     checkSanitizeOutOfDate();
     clearTimeout(debounceTimer);
-    const text = rawInput.value;
-    if (text.length > 80000) {
-      showLargeInputNotice(text);
-      return;
-    }
-    debounceTimer = setTimeout(runLivePreview, 200);
+    debounceTimer = setTimeout(runLivePreview, 150);
   });
 
-  aiResponseInput.addEventListener('input', () => {
-    checkReverseOutOfDate();
-    renderAiResponseHighlights();
-  });
-
-  // Action Buttons
+  // Sanitize Tab Actions
   sanitizeBtn.addEventListener('click', executeSanitize);
-  copySanitizedBtn.addEventListener('click', () => copyToClipboard(sanitizedOutput.value, copySanitizedBtn));
+
+  copySanitizedBtn.addEventListener('click', () => {
+    let textToCopy = sanitizedOutput.value;
+    if (addInstructionToggle && addInstructionToggle.checked && lastSanitizedResult) {
+      const header = buildLlmInstructionHeader(lastSanitizedResult.entities || []);
+      if (header) {
+        textToCopy = `${header}\n\n${textToCopy}`;
+      }
+    }
+    copyToClipboard(textToCopy, copySanitizedBtn);
+  });
 
   pasteClipboardBtn.addEventListener('click', async () => {
     try {
@@ -289,13 +337,21 @@ function attachEvents() {
     residualAlert.classList.add('hidden');
     outOfDateBadge.classList.add('hidden');
     sanitizedOutput.parentElement.classList.remove('out-of-date');
-    excludedEntityIds.clear();
     lastSanitizedInput = null;
+    lastSanitizedResult = null;
   });
 
-  // Reverse Map Tab
+  // Reverse Map Tab Actions
+  aiResponseInput.addEventListener('input', () => {
+    checkReverseOutOfDate();
+    renderAiResponseHighlights();
+  });
+
   reverseMapBtn.addEventListener('click', executeReverseMap);
-  copyRestoredBtn.addEventListener('click', () => copyToClipboard(restoredOutput.value, copyRestoredBtn));
+
+  copyRestoredBtn.addEventListener('click', () => {
+    copyToClipboard(restoredOutput.value, copyRestoredBtn);
+  });
 
   pasteAiReplyBtn.addEventListener('click', async () => {
     try {
@@ -314,6 +370,8 @@ function attachEvents() {
     aiResponseBackdrop.innerHTML = '';
     restoredOutput.value = '';
     restoredOutputBackdrop.innerHTML = '';
+    if (healthCheckStrip) healthCheckStrip.classList.add('hidden');
+    if (unrecognizedTokensSection) unrecognizedTokensSection.classList.add('hidden');
     reverseStatusBanner.classList.add('hidden');
     reversePlaceholderChips.classList.add('hidden');
     reverseOutOfDateBadge.classList.add('hidden');
@@ -321,15 +379,50 @@ function attachEvents() {
     lastReversedAiInput = null;
   });
 
-  // Vault Tab
+  // Vault Tab Actions
   clearVaultBtn.addEventListener('click', async () => {
-    if (confirm('Are you sure you want to clear all session vault mappings? Reverse mapping previously sanitized text will no longer be possible.')) {
+    if (confirm('Are you sure you want to clear all session vault mappings and aliases?')) {
       vault.clear();
       await vault.saveToStorage();
       updateVaultUI();
-      showToast('Vault cleared');
+      showToast('Vault and aliases cleared');
     }
   });
+
+  if (clearAliasesBtn) {
+    clearAliasesBtn.addEventListener('click', async () => {
+      vault.clearAliases();
+      await vault.saveToStorage();
+      updateVaultUI();
+      showToast('Session aliases cleared');
+    });
+  }
+
+  // Diagnostic AI Test Tool
+  if (generateAiTestBlockBtn) {
+    generateAiTestBlockBtn.addEventListener('click', () => {
+      const sampleBlock = generateAiDiagnosticPrompt();
+      aiTestPromptText.value = sampleBlock;
+      aiTestBlockContainer.classList.remove('hidden');
+    });
+  }
+
+  if (copyAiTestPromptBtn) {
+    copyAiTestPromptBtn.addEventListener('click', () => {
+      copyToClipboard(aiTestPromptText.value, copyAiTestPromptBtn);
+    });
+  }
+
+  // Modal actions
+  if (closeMappingModalBtn) {
+    closeMappingModalBtn.addEventListener('click', hideMappingModal);
+  }
+  if (cancelMappingBtn) {
+    cancelMappingBtn.addEventListener('click', hideMappingModal);
+  }
+  if (confirmMappingBtn) {
+    confirmMappingBtn.addEventListener('click', confirmAndSaveMapping);
+  }
 }
 
 // Out of date detection
@@ -377,7 +470,6 @@ function runLivePreview() {
     return;
   }
 
-  // Dry run scan using temporary vault clone
   const preview = sanitize(text, {
     vault: new Vault(),
     sensitivity: settings.sensitivity,
@@ -385,10 +477,10 @@ function runLivePreview() {
     allowlist: settings.allowlist,
     customRules: settings.customRules,
     enabledCategories: settings.enabledCategories,
+    placeholderStyles: settings.placeholderStyles,
     excludedEntityIds: Array.from(excludedEntityIds)
   });
 
-  // Render highlights in mirrored backdrop
   const spans = preview.entities.map(e => ({
     start: e.start,
     end: e.end,
@@ -404,7 +496,6 @@ function runLivePreview() {
     return;
   }
 
-  // Turn live summary banner red
   liveSummary.classList.remove('hidden');
   liveSummary.className = 'summary-bar summary-red';
 
@@ -431,10 +522,8 @@ function runLivePreview() {
       <button class="badge-toggle-btn" title="${isExcluded ? 'Include' : 'Exclude'}">${isExcluded ? '+' : '✕'}</button>
     `;
 
-    // Click badge body to jump to and highlight span in input
     badge.addEventListener('click', (e) => {
       if (e.target.classList.contains('badge-toggle-btn')) {
-        // Toggle exclusion
         if (isExcluded) {
           excludedEntityIds.delete(entity.id);
           excludedEntityIds.delete(entity.rawValue);
@@ -446,7 +535,6 @@ function runLivePreview() {
         return;
       }
 
-      // Jump to and select span in input
       rawInput.focus();
       rawInput.setSelectionRange(entity.start, entity.end);
       syncScroll(rawInput, rawInputBackdrop);
@@ -468,7 +556,6 @@ async function executeSanitize() {
   const text = rawInput.value;
   if (!text.trim()) return;
 
-  // Immediate visual feedback with spinner
   sanitizeBtn.disabled = true;
   const originalBtnHtml = sanitizeBtn.innerHTML;
   sanitizeBtn.innerHTML = `
@@ -479,10 +566,10 @@ async function executeSanitize() {
     <span>Sanitizing...</span>
   `;
 
-  // Yield to allow browser to render loading state
   await new Promise(resolve => setTimeout(resolve, 20));
 
   try {
+    await vault.loadFromStorage();
     const result = sanitize(text, {
       vault,
       sensitivity: settings.sensitivity,
@@ -490,9 +577,11 @@ async function executeSanitize() {
       allowlist: settings.allowlist,
       customRules: settings.customRules,
       enabledCategories: settings.enabledCategories,
+      placeholderStyles: settings.placeholderStyles,
       excludedEntityIds: Array.from(excludedEntityIds)
     });
 
+    lastSanitizedResult = result;
     sanitizedOutput.value = result.sanitizedText;
     lastSanitizedInput = text;
     checkSanitizeOutOfDate();
@@ -573,7 +662,6 @@ function renderAiResponseHighlights() {
     return;
   }
 
-  // Fast limit for large AI text
   if (text.length > 100000) {
     aiResponseBackdrop.innerHTML = '';
     return;
@@ -594,6 +682,39 @@ function renderAiResponseHighlights() {
       });
       idx += pl.length;
       if (spans.length >= maxSpans) break;
+    }
+    if (spans.length >= maxSpans) break;
+  }
+
+  // Highlight active session aliases
+  if (vault.aliases) {
+    for (const [aliasToken] of vault.aliases) {
+      let idx = 0;
+      while ((idx = text.indexOf(aliasToken, idx)) !== -1) {
+        spans.push({
+          start: idx,
+          end: idx + aliasToken.length,
+          hlClass: 'hl-placeholder'
+        });
+        idx += aliasToken.length;
+        if (spans.length >= maxSpans) break;
+      }
+      if (spans.length >= maxSpans) break;
+    }
+  }
+
+  // Highlight unrecognized redaction tags in red
+  const unrecTagRegex = /\[[A-Za-z0-9_ -]*(?:REDACTED|MASKED|MOCK|ANONYMIZED|PII|AADHAAR|AADHAR|PAN|SSN|EMAIL|PHONE|CARD|SECRET|KEY|CONFIDENTIAL)[A-Za-z0-9_ -]*\]|<[A-Za-z0-9_ -]*(?:REDACTED|MASKED|MOCK|ANONYMIZED|PII)[A-Za-z0-9_ -]*>|\{\{[A-Za-z0-9_ -]+\}\}|(?<!\w)REDACTED_[A-Za-z0-9_]+_MOCK(?!\w)|(?<!\d)X{4}[\s-]X{4}[\s-](?:\d{4}|X{4})(?!\d)/gi;
+  let utm;
+  while ((utm = unrecTagRegex.exec(text)) !== null) {
+    const start = utm.index;
+    const end = start + utm[0].length;
+    if (!spans.some(s => (start >= s.start && start < s.end) || (end > s.start && end <= s.end))) {
+      spans.push({
+        start,
+        end,
+        hlClass: 'hl-unrecognized'
+      });
     }
     if (spans.length >= maxSpans) break;
   }
@@ -626,7 +747,7 @@ async function executeReverseMap() {
     lastReversedAiInput = text;
     checkReverseOutOfDate();
 
-    // Highlight restored values in restored output backdrop (capped for performance)
+    // Highlight restored values in output backdrop
     const restoredSpans = [];
     const maxSpans = 150;
     for (const detail of res.details) {
@@ -644,62 +765,134 @@ async function executeReverseMap() {
     }
     renderMirroredBackdrop(res.restoredText, restoredSpans, restoredOutputBackdrop);
 
-    // Reverse Status Banner
-    reverseStatusBanner.classList.remove('hidden');
-    const unmatchedCount = res.unmatchedPlaceholders.length;
+    // 1. Render Health Check Strip
+    if (healthCheckStrip) {
+      healthCheckStrip.classList.remove('hidden');
+      const hc = res.healthCheck;
+      healthCheckStrip.className = `health-strip ${hc.status === 'green' ? 'status-green' : 'status-amber'}`;
 
-    if (unmatchedCount > 0) {
-      reverseStatusBanner.className = 'status-banner warning';
-      reverseStatusBanner.textContent = `Found ${res.restoredCount + unmatchedCount} placeholder(s): ${res.restoredCount} restored, ${unmatchedCount} unmatched.`;
-    } else {
-      reverseStatusBanner.className = 'status-banner';
-      reverseStatusBanner.textContent = `Found ${res.restoredCount} placeholder(s): ${res.restoredCount} restored, 0 unmatched.`;
+      healthIssued.textContent = `Issued ${hc.issuedCount}`;
+      healthFound.textContent = `Found ${hc.foundCount}`;
+      healthRestored.textContent = `Restored ${hc.restoredCount}`;
+      healthMissing.textContent = `Missing ${hc.missingCount}`;
+      healthUnrecognized.textContent = `Unrecognized ${hc.unrecognizedCount}`;
+
+      healthDetailsContainer.innerHTML = '';
+
+      // Missing placeholders in amber
+      if (hc.missing && hc.missing.length > 0) {
+        hc.missing.forEach(mis => {
+          const mEl = document.createElement('div');
+          mEl.className = 'stat-amber';
+          mEl.textContent = `• ${mis.placeholder} not found in reply (the AI may have dropped or rewritten it)`;
+          healthDetailsContainer.appendChild(mEl);
+        });
+      }
+
+      // Correlation hints: Did AI rewrite X as Y?
+      if (hc.correlationHints && hc.correlationHints.length > 0) {
+        hc.correlationHints.forEach(hint => {
+          const hintBox = document.createElement('div');
+          hintBox.className = 'correlation-hint-box';
+
+          const hintText = document.createElement('span');
+          hintText.textContent = hint.message;
+
+          const mapBtn = document.createElement('button');
+          mapBtn.className = 'btn-map-hint';
+          mapBtn.textContent = 'Map it';
+          mapBtn.addEventListener('click', () => {
+            openMappingModal(hint.unrecognizedToken);
+          });
+
+          hintBox.appendChild(hintText);
+          hintBox.appendChild(mapBtn);
+          healthDetailsContainer.appendChild(hintBox);
+        });
+      }
     }
 
-    // Reverse Placeholder Chips (cap DOM count to 40)
+    // 2. Render Unrecognized Redaction Tokens Section
+    if (unrecognizedTokensSection && unrecognizedTokensList) {
+      const unrec = res.healthCheck.unrecognized || [];
+      if (unrec.length > 0) {
+        unrecognizedTokensSection.classList.remove('hidden');
+        unrecognizedTokensList.innerHTML = '';
+
+        // Show instruction header hint in Sanitize tab
+        if (instructionHint) {
+          instructionHint.classList.remove('hidden');
+        }
+
+        unrec.forEach(item => {
+          const chip = document.createElement('div');
+          chip.className = 'unrecognized-chip';
+
+          const tokenBold = document.createElement('strong');
+          tokenBold.textContent = item.token;
+
+          const countSpan = document.createElement('span');
+          countSpan.textContent = `x${item.count}`;
+
+          const mapBtn = document.createElement('button');
+          mapBtn.className = 'btn-map-token';
+          mapBtn.textContent = 'Map to...';
+          mapBtn.addEventListener('click', () => {
+            openMappingModal(item.token);
+          });
+
+          chip.appendChild(tokenBold);
+          chip.appendChild(countSpan);
+          chip.appendChild(mapBtn);
+          unrecognizedTokensList.appendChild(chip);
+        });
+      } else {
+        unrecognizedTokensSection.classList.add('hidden');
+      }
+    }
+
+    // 3. Status Banner
+    reverseStatusBanner.classList.remove('hidden');
+    const unmatchedCount = res.unmatchedPlaceholders.length;
+    if (unmatchedCount > 0 || res.healthCheck.unrecognizedCount > 0) {
+      reverseStatusBanner.className = 'status-banner warning';
+      reverseStatusBanner.textContent = `Found ${res.restoredCount} restored value(s), ${res.healthCheck.missingCount} missing, ${res.healthCheck.unrecognizedCount} unrecognized tokens.`;
+    } else {
+      reverseStatusBanner.className = 'status-banner';
+      reverseStatusBanner.textContent = `All clear: ${res.restoredCount} value(s) restored with 0 missing and 0 unrecognized.`;
+    }
+
+    // 4. Reverse Placeholder Chips
     reversePlaceholderChips.classList.remove('hidden');
     reversePlaceholderChips.innerHTML = '';
-
     const maxChips = 40;
     const visibleDetails = res.details.slice(0, maxChips);
 
-    // Restored tokens
     for (const detail of visibleDetails) {
       const chip = document.createElement('div');
       chip.className = 'reverse-chip';
-      chip.innerHTML = `
-        <strong>${escapeHtml(detail.placeholder)}</strong>
-        <span>→</span>
-        <span class="masked-val" title="Click to reveal">••••••••</span>
-      `;
-      const valEl = chip.querySelector('.masked-val');
+
+      const strong = document.createElement('strong');
+      strong.textContent = detail.placeholder;
+
+      const arrow = document.createElement('span');
+      arrow.textContent = '→';
+
+      const valEl = document.createElement('span');
+      valEl.className = 'masked-val';
+      valEl.title = 'Click to reveal';
+      valEl.textContent = '••••••••';
       let revealed = false;
       valEl.addEventListener('click', () => {
         revealed = !revealed;
         valEl.textContent = revealed ? detail.realValue : '••••••••';
         valEl.classList.toggle('revealed', revealed);
       });
+
+      chip.appendChild(strong);
+      chip.appendChild(arrow);
+      chip.appendChild(valEl);
       reversePlaceholderChips.appendChild(chip);
-    }
-
-    if (res.details.length > maxChips) {
-      const morePill = document.createElement('div');
-      morePill.className = 'reverse-chip';
-      morePill.textContent = `+${(res.details.length - maxChips).toLocaleString()} more restored tokens`;
-      reversePlaceholderChips.appendChild(morePill);
-    }
-
-    // Unmatched tokens
-    if (res.unmatchedDetails) {
-      for (const item of res.unmatchedDetails.slice(0, 20)) {
-        const chip = document.createElement('div');
-        chip.className = 'reverse-chip unmatched';
-        chip.innerHTML = `
-          <strong>${escapeHtml(item.token)}</strong>
-          <span class="hint-text">${item.hint ? escapeHtml(item.hint) : 'unmatched in vault'}</span>
-        `;
-        reversePlaceholderChips.appendChild(chip);
-      }
     }
   } finally {
     reverseMapBtn.disabled = false;
@@ -707,60 +900,250 @@ async function executeReverseMap() {
   }
 }
 
-// Update Vault UI
+// Open Assisted Manual Mapping Modal
+function openMappingModal(token) {
+  currentMappingToken = token;
+  currentMappingCandidatePl = null;
+
+  popoverTokenLabel.textContent = token;
+  const inferredCat = inferCategoryFromToken(token);
+  popoverCategoryLabel.textContent = inferredCat;
+
+  const entries = vault.getAllEntries();
+  popoverCandidatesList.innerHTML = '';
+
+  if (entries.length === 0) {
+    const emptyP = document.createElement('p');
+    emptyP.className = 'empty-cell';
+    emptyP.textContent = 'No placeholders currently stored in the vault.';
+    popoverCandidatesList.appendChild(emptyP);
+    confirmMappingBtn.disabled = true;
+    mappingPopoverModal.classList.remove('hidden');
+    return;
+  }
+
+  // Sort: matching inferred category first, then others
+  const sorted = [...entries].sort((a, b) => {
+    const aMatch = (a.type === inferredCat || a.category === inferredCat);
+    const bMatch = (b.type === inferredCat || b.category === inferredCat);
+    if (aMatch && !bMatch) return -1;
+    if (!aMatch && bMatch) return 1;
+    return a.placeholder.localeCompare(b.placeholder);
+  });
+
+  const matchingEntries = sorted.filter(e => e.type === inferredCat || e.category === inferredCat);
+  const autoSelect = (matchingEntries.length === 1);
+
+  sorted.forEach(entry => {
+    const row = document.createElement('div');
+    row.className = 'candidate-row';
+
+    const radio = document.createElement('input');
+    radio.type = 'radio';
+    radio.name = 'mappingCandidate';
+    radio.value = entry.placeholder;
+
+    const details = document.createElement('div');
+    details.className = 'candidate-details';
+
+    const plSpan = document.createElement('span');
+    plSpan.className = 'candidate-pl';
+    plSpan.textContent = `${entry.placeholder} (${entry.type})`;
+
+    const maskedSpan = document.createElement('span');
+    maskedSpan.className = 'candidate-val';
+    const maskedText = maskRealValue(entry.realValue, entry.type);
+    maskedSpan.textContent = `Real: ${maskedText} (click to reveal)`;
+    let revealed = false;
+    maskedSpan.addEventListener('click', (e) => {
+      e.stopPropagation();
+      revealed = !revealed;
+      maskedSpan.textContent = revealed ? `Real: ${entry.realValue}` : `Real: ${maskedText} (click to reveal)`;
+      maskedSpan.classList.toggle('revealed', revealed);
+    });
+
+    details.appendChild(plSpan);
+    details.appendChild(maskedSpan);
+
+    row.appendChild(radio);
+    row.appendChild(details);
+
+    const selectThis = () => {
+      document.querySelectorAll('.candidate-row').forEach(r => r.classList.remove('selected'));
+      row.classList.add('selected');
+      radio.checked = true;
+      currentMappingCandidatePl = entry.placeholder;
+      confirmMappingBtn.disabled = false;
+      confirmMappingBtn.textContent = `Restore occurrences as ${maskedText}`;
+    };
+
+    row.addEventListener('click', selectThis);
+    radio.addEventListener('change', selectThis);
+
+    if (autoSelect && entry.placeholder === matchingEntries[0].placeholder) {
+      selectThis();
+    }
+
+    popoverCandidatesList.appendChild(row);
+  });
+
+  if (!autoSelect) {
+    confirmMappingBtn.disabled = true;
+    confirmMappingBtn.textContent = 'Select a mapping above';
+  }
+
+  mappingPopoverModal.classList.remove('hidden');
+}
+
+function hideMappingModal() {
+  mappingPopoverModal.classList.add('hidden');
+  currentMappingToken = null;
+  currentMappingCandidatePl = null;
+}
+
+async function confirmAndSaveMapping() {
+  if (!currentMappingToken || !currentMappingCandidatePl) return;
+
+  vault.addAlias(currentMappingToken, currentMappingCandidatePl);
+  await vault.saveToStorage();
+
+  hideMappingModal();
+  updateVaultUI();
+  showToast(`Mapped ${currentMappingToken} to ${currentMappingCandidatePl}`);
+
+  // Re-run Reverse Map immediately
+  await executeReverseMap();
+}
+
+// Generate Diagnostic Test Prompt (Section 3.F)
+function generateAiDiagnosticPrompt() {
+  const entries = vault.getAllEntries();
+  const tokens = [];
+
+  if (entries.length > 0) {
+    const seenTypes = new Set();
+    for (const e of entries) {
+      if (!seenTypes.has(e.type)) {
+        seenTypes.add(e.type);
+        tokens.push(`${e.type.toLowerCase()} = ${e.placeholder}`);
+      }
+    }
+  } else {
+    // Default sample set
+    tokens.push('password = REDACTED_KEY_1');
+    tokens.push('ip = 10.0.0.1');
+    tokens.push('pan = AAAAA1000A');
+    tokens.push('aadhar = REDACTED_AADHAAR_1');
+    tokens.push('card = REDACTED_CARD_1');
+    tokens.push('email = user_A@example.com');
+  }
+
+  return [
+    'Note: The following text contains intentional anonymization placeholders.',
+    'Repeat the following text exactly, then write a 3-line application log using every token.',
+    '',
+    ...tokens
+  ].join('\n');
+}
+
+// Update Vault & Aliases UI
 function updateVaultUI() {
   const entries = vault.getAllEntries();
   vaultBadge.textContent = entries.length.toString();
 
+  // 1. Vault Table
   if (entries.length === 0) {
     vaultTableBody.innerHTML = `
       <tr>
         <td colspan="4" class="empty-cell">Vault is currently empty. Sanitize text to populate.</td>
       </tr>
     `;
-    return;
+  } else {
+    vaultTableBody.innerHTML = '';
+    entries.forEach(entry => {
+      const tr = document.createElement('tr');
+
+      const tdPlaceholder = document.createElement('td');
+      tdPlaceholder.textContent = entry.placeholder;
+
+      const tdReal = document.createElement('td');
+      tdReal.className = 'masked-val';
+      const masked = maskRealValue(entry.realValue, entry.type);
+      tdReal.textContent = masked;
+      tdReal.title = 'Click to reveal real value';
+      let revealed = false;
+      tdReal.addEventListener('click', () => {
+        revealed = !revealed;
+        tdReal.textContent = revealed ? entry.realValue : masked;
+        tdReal.classList.toggle('revealed', revealed);
+      });
+
+      const tdType = document.createElement('td');
+      tdType.textContent = entry.type;
+
+      const tdAction = document.createElement('td');
+      const delBtn = document.createElement('button');
+      delBtn.className = 'btn-del-row';
+      delBtn.title = 'Delete this mapping';
+      delBtn.textContent = '✕';
+      delBtn.addEventListener('click', async () => {
+        vault.deleteEntry(entry.placeholder);
+        await vault.saveToStorage();
+        updateVaultUI();
+      });
+      tdAction.appendChild(delBtn);
+
+      tr.appendChild(tdPlaceholder);
+      tr.appendChild(tdReal);
+      tr.appendChild(tdType);
+      tr.appendChild(tdAction);
+
+      vaultTableBody.appendChild(tr);
+    });
   }
 
-  vaultTableBody.innerHTML = '';
-  entries.forEach(entry => {
-    const tr = document.createElement('tr');
+  // 2. Aliases Table
+  if (aliasesTableBody) {
+    const aliases = vault.getAliases();
+    if (aliases.length === 0) {
+      aliasesTableBody.innerHTML = `
+        <tr>
+          <td colspan="3" class="empty-cell">No active session aliases.</td>
+        </tr>
+      `;
+    } else {
+      aliasesTableBody.innerHTML = '';
+      aliases.forEach(([aliasToken, targetPl]) => {
+        const tr = document.createElement('tr');
 
-    const tdPlaceholder = document.createElement('td');
-    tdPlaceholder.textContent = entry.placeholder;
+        const tdAlias = document.createElement('td');
+        tdAlias.className = 'hl-token';
+        tdAlias.textContent = aliasToken;
 
-    const tdReal = document.createElement('td');
-    tdReal.className = 'masked-val';
-    tdReal.textContent = '••••••••••••';
-    tdReal.title = 'Click to reveal real value';
-    let revealed = false;
-    tdReal.addEventListener('click', () => {
-      revealed = !revealed;
-      tdReal.textContent = revealed ? entry.realValue : '••••••••••••';
-      tdReal.classList.toggle('revealed', revealed);
-    });
+        const tdTarget = document.createElement('td');
+        tdTarget.textContent = targetPl;
 
-    const tdType = document.createElement('td');
-    tdType.textContent = entry.type;
+        const tdAction = document.createElement('td');
+        const delBtn = document.createElement('button');
+        delBtn.className = 'btn-del-row';
+        delBtn.title = 'Delete this alias';
+        delBtn.textContent = '✕';
+        delBtn.addEventListener('click', async () => {
+          vault.deleteAlias(aliasToken);
+          await vault.saveToStorage();
+          updateVaultUI();
+          showToast(`Deleted alias for ${aliasToken}`);
+        });
+        tdAction.appendChild(delBtn);
 
-    const tdAction = document.createElement('td');
-    const delBtn = document.createElement('button');
-    delBtn.className = 'btn-del-row';
-    delBtn.title = 'Delete this mapping';
-    delBtn.textContent = '✕';
-    delBtn.addEventListener('click', async () => {
-      vault.deleteEntry(entry.placeholder);
-      await vault.saveToStorage();
-      updateVaultUI();
-    });
-    tdAction.appendChild(delBtn);
+        tr.appendChild(tdAlias);
+        tr.appendChild(tdTarget);
+        tr.appendChild(tdAction);
 
-    tr.appendChild(tdPlaceholder);
-    tr.appendChild(tdReal);
-    tr.appendChild(tdType);
-    tr.appendChild(tdAction);
-
-    vaultTableBody.appendChild(tr);
-  });
+        aliasesTableBody.appendChild(tr);
+      });
+    }
+  }
 }
 
 // Copy to clipboard with SVG icon swap and toast feedback
@@ -778,7 +1161,6 @@ async function copyToClipboard(text, btn) {
     document.body.removeChild(ta);
   }
 
-  // Swap icon to checkmark
   const copyIcon = btn.querySelector('.copy-icon');
   const checkIcon = btn.querySelector('.check-icon');
   if (copyIcon && checkIcon) {

@@ -275,19 +275,142 @@ async function showNotificationToast(tabId, message) {
   }
 }
 
+// Offscreen Document Clipboard Manager for Manifest V3
+async function ensureOffscreenDocument() {
+  if (chrome.runtime.getContexts) {
+    try {
+      const contexts = await chrome.runtime.getContexts({
+        contextTypes: ['OFFSCREEN_DOCUMENT']
+      });
+      if (contexts && contexts.length > 0) return;
+    } catch (_) {}
+  }
+  try {
+    await chrome.offscreen.createDocument({
+      url: 'offscreen/offscreen.html',
+      reasons: ['CLIPBOARD'],
+      justification: 'Read and write clipboard text for PII sanitization'
+    });
+  } catch (err) {
+    // Document already exists or active
+  }
+}
+
+async function readClipboardViaOffscreen() {
+  await ensureOffscreenDocument();
+  const res = await chrome.runtime.sendMessage({
+    target: 'offscreen-clipboard',
+    action: 'READ'
+  });
+  return res?.text || '';
+}
+
+async function writeClipboardViaOffscreen(text) {
+  await ensureOffscreenDocument();
+  const res = await chrome.runtime.sendMessage({
+    target: 'offscreen-clipboard',
+    action: 'WRITE',
+    text
+  });
+  return Boolean(res?.success);
+}
+
 // Handle Runtime Messages from UI & Content Scripts
 chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
+  // Offscreen internal routing bypass
+  if (request.target === 'offscreen-clipboard') {
+    return false;
+  }
+
+  if (request.action === 'READ_CLIPBOARD' || request.type === 'READ_CLIPBOARD') {
+    (async () => {
+      try {
+        const text = await readClipboardViaOffscreen();
+        sendResponse({ success: true, text });
+      } catch (err) {
+        sendResponse({ success: false, error: err.message, text: '' });
+      }
+    })();
+    return true;
+  }
+
+  if (request.action === 'WRITE_CLIPBOARD' || request.type === 'WRITE_CLIPBOARD') {
+    (async () => {
+      try {
+        const ok = await writeClipboardViaOffscreen(request.text || '');
+        sendResponse({ success: ok });
+      } catch (err) {
+        sendResponse({ success: false, error: err.message });
+      }
+    })();
+    return true;
+  }
   if (request.type === 'SYNC_PERMISSIONS') {
     syncRegisteredContentScripts().then(() => sendResponse({ success: true }));
     return true;
   }
 
-  if (request.type === 'OPEN_SIDE_PANEL') {
+  if (request.type === 'OPEN_SIDE_PANEL' || request.action === 'OPEN_SIDE_PANEL') {
     if (sender.tab && chrome.sidePanel && chrome.sidePanel.open) {
       chrome.sidePanel.open({ windowId: sender.tab.windowId }).then(() => {
         sendResponse({ success: true });
       });
       return true;
     }
+  }
+
+  // Centralized Sanitization for Content Scripts and Extension Contexts
+  if (request.action === 'SANITIZE_TEXT' || request.type === 'SANITIZE_TEXT') {
+    (async () => {
+      try {
+        const vault = new Vault();
+        await vault.loadFromStorage();
+        const settingsStore = await chrome.storage.local.get('smart_pii_settings');
+        const settings = settingsStore.smart_pii_settings || DEFAULT_SETTINGS;
+
+        const { sanitizedText, stats } = sanitize(request.text || '', {
+          vault,
+          sensitivity: settings.sensitivity,
+          enableNames: settings.enableNames,
+          allowlist: settings.allowlist,
+          customRules: settings.customRules,
+          enabledCategories: settings.enabledCategories
+        });
+
+        await vault.saveToStorage();
+        sendResponse({ success: true, sanitizedText, stats });
+      } catch (err) {
+        console.error('[Smart PII Sanitizer] Background sanitize error:', err);
+        sendResponse({ success: false, error: err.message });
+      }
+    })();
+    return true; // Keep response channel open for async callback
+  }
+
+  // Centralized Reverse Mapping for Content Scripts and Extension Contexts
+  if (request.action === 'REVERSE_MAP_TEXT' || request.type === 'REVERSE_MAP_TEXT') {
+    (async () => {
+      try {
+        const vault = new Vault();
+        await vault.loadFromStorage();
+
+        const { restoredText, restoredCount, stats } = reverseMap(request.text || '', vault);
+        sendResponse({ success: true, restoredText, restoredCount, stats });
+      } catch (err) {
+        console.error('[Smart PII Sanitizer] Background reverse error:', err);
+        sendResponse({ success: false, error: err.message });
+      }
+    })();
+    return true;
+  }
+
+  // Get Vault Stats
+  if (request.action === 'GET_VAULT_STATS' || request.type === 'GET_VAULT_STATS') {
+    (async () => {
+      const vault = new Vault();
+      await vault.loadFromStorage();
+      sendResponse({ count: vault.getAllEntries().length });
+    })();
+    return true;
   }
 });

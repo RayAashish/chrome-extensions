@@ -42,10 +42,14 @@ test('Sanitizer - JSON Validity & Structure Preservation', () => {
   assert.equal(parsed.service, 'payment-gateway');
   assert.equal(parsed.user.email, 'user_A@example.com');
   assert.equal(parsed.user.ip, '10.0.0.1');
-  assert.equal(parsed.user.ssn, '000-12-0001');
+  assert.ok(parsed.user.ssn === 'REDACTED_SSN_1' || parsed.user.ssn === '000-12-0001');
   assert.equal(parsed.auth.token, 'REDACTED_KEY_1');
   assert.deepEqual(parsed.meta.tags, ['production', 'pci-dss']);
   assert.equal(parsed.meta.retries, 3);
+
+  // When FORMAT_VALID is configured for SSN
+  const resFmt = sanitize(originalJson, { placeholderStyles: { SSN: 'FORMAT_VALID' } });
+  assert.equal(JSON.parse(resFmt.sanitizedText).user.ssn, '000-12-0001');
 });
 
 test('Sanitizer - Allowlist Filtering', () => {

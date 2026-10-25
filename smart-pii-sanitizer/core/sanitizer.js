@@ -172,6 +172,9 @@ export function sanitize(rawText, options = {}) {
   if (options.useTypedPlaceholders !== undefined) {
     vault.options.useTypedPlaceholders = options.useTypedPlaceholders;
   }
+  if (options.placeholderStyles) {
+    vault.setPlaceholderStyles(options.placeholderStyles);
+  }
   vault.registerInputLiterals(rawText);
   const allowlist = options.allowlist || [];
   const customRules = options.customRules || [];
@@ -381,3 +384,34 @@ export function sanitize(rawText, options = {}) {
     vault
   };
 }
+
+/**
+ * Builds optional instruction header to prepend to sanitized text on copy
+ */
+export function buildLlmInstructionHeader(issuedEntitiesOrTokens = [], template = '') {
+  const tokens = [];
+  if (Array.isArray(issuedEntitiesOrTokens)) {
+    for (const item of issuedEntitiesOrTokens) {
+      const pl = typeof item === 'string' ? item : (item && item.placeholder ? item.placeholder : '');
+      if (pl && !tokens.includes(pl)) {
+        tokens.push(pl);
+      }
+    }
+  }
+  if (tokens.length === 0) return '';
+
+  const sampleTokens = tokens.slice(0, 5);
+  let sampleStr = '';
+  if (sampleTokens.length === 1) {
+    sampleStr = sampleTokens[0];
+  } else if (sampleTokens.length === 2) {
+    sampleStr = `${sampleTokens[0]} and ${sampleTokens[1]}`;
+  } else {
+    sampleStr = `${sampleTokens.slice(0, -1).join(', ')} and ${sampleTokens[sampleTokens.length - 1]}`;
+  }
+
+  const defaultTemplate = 'Note: tokens like {TOKENS} are intentional anonymization placeholders. Keep them exactly as written in your answer; do not mask, reformat, explain or replace them.';
+  const actualTemplate = template && template.includes('{TOKENS}') ? template : defaultTemplate;
+  return actualTemplate.replace('{TOKENS}', sampleStr);
+}
+

@@ -4,6 +4,7 @@
   "description": "Deterministic, structure-preserving local PII & secret sanitizer Chrome extension with reverse-mapping.",
   "type": "module",
   "scripts": {
+    "build": "mkdir -p dist && rsync -av --exclude='dist' --exclude='test*' --exclude='fixtures' --exclude='store-assets' --exclude='scripts' --exclude='node_modules' --exclude='package*.json' ./ dist/ && cp -r dist/ ../dist/ && zip -r ../smart-pii-sanitizer-edge.zip . -x '*.git*' 'dist/*' 'test/*' 'tests/*' 'fixtures/*' 'store-assets/*' 'package.json' 'package-lock.json' 'node_modules/*' '*.DS_Store'",
     "test": "node --test test/**/*.test.js",
     "test:acceptance": "node --test test/acceptance.test.js",
     "test:perf": "node --test test/performance.test.js"

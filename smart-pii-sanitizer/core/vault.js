@@ -8,19 +8,96 @@ import {
   generateDeterministicLuhnCard
 } from './detectors.js';
 
+export const DEFAULT_PLACEHOLDER_STYLES = {
+  // TAG style defaults (as specified in Section 3.A):
+  SECRETS: 'TAG',           // REDACTED_KEY_1
+  KEY: 'TAG',               // REDACTED_KEY_1
+  AADHAAR: 'TAG',           // REDACTED_AADHAAR_1
+  SSN: 'TAG',               // REDACTED_SSN_1
+  CREDIT_CARD: 'TAG',       // REDACTED_CARD_1
+  BANK_ACCOUNT: 'TAG',      // REDACTED_ACCOUNT_1
+  ACCOUNT: 'TAG',           // REDACTED_ACCOUNT_1
+  PASSPORT: 'TAG',          // REDACTED_PASSPORT_1
+  DRIVING_LICENSE: 'TAG',   // REDACTED_LICENSE_1
+  LICENSE: 'TAG',           // REDACTED_LICENSE_1
+  VOTER_ID: 'TAG',          // REDACTED_VOTER_ID_1
+  ID_CARDS: 'TAG',          // Fallback default for national IDs
+
+  // FORMAT-VALID defaults:
+  EMAIL: 'FORMAT_VALID',    // user_A@example.com
+  IPV4: 'FORMAT_VALID',     // 10.0.0.1
+  IPV6: 'FORMAT_VALID',     // 2001:db8::1
+  HOST: 'FORMAT_VALID',     // host_A.example.internal
+  US_PHONE: 'FORMAT_VALID', // +1-555-0100
+  INDIA_PHONE: 'FORMAT_VALID', // 50000 00001
+  PHONE: 'FORMAT_VALID',
+  PAN: 'FORMAT_VALID',      // AAAAA1000A
+  URL_USER: 'FORMAT_VALID', // urluser_1
+  LOCAL_USER: 'FORMAT_VALID'
+};
+
+/**
+ * Mask real values for assisted mapping popover and diagnostics
+ * Adheres to UIDAI standard for Aadhaar: first 8 digits hidden, last 4 revealed (XXXX XXXX 7644)
+ */
+export function maskRealValue(realValue, type = '') {
+  if (typeof realValue !== 'string') return '••••••••';
+  const clean = realValue.trim();
+
+  if (type === 'AADHAAR' || /aadhaar/i.test(type)) {
+    const digits = clean.replace(/\D/g, '');
+    const last4 = digits.slice(-4) || 'XXXX';
+    return `XXXX XXXX ${last4}`;
+  }
+
+  if (type === 'CREDIT_CARD' || /card/i.test(type)) {
+    const digits = clean.replace(/\D/g, '');
+    const last4 = digits.slice(-4) || 'XXXX';
+    return `**** **** **** ${last4}`;
+  }
+
+  if (type === 'PAN' || /pan/i.test(type)) {
+    const last4 = clean.slice(-4);
+    return `******${last4}`;
+  }
+
+  if (type === 'EMAIL' || clean.includes('@')) {
+    const [user, domain] = clean.split('@');
+    const first = user ? user[0] : '';
+    return `${first}***@${domain || 'example.com'}`;
+  }
+
+  if (type === 'SSN') {
+    const digits = clean.replace(/\D/g, '');
+    const last4 = digits.slice(-4) || 'XXXX';
+    return `XXX-XX-${last4}`;
+  }
+
+  if (type === 'PHONE' || type === 'US_PHONE' || type === 'INDIA_PHONE') {
+    const digits = clean.replace(/\D/g, '');
+    const last4 = digits.slice(-4);
+    return `+**-***-**${last4}`;
+  }
+
+  return '••••••••';
+}
+
 const PLACEHOLDER_LITERAL_REGEX = /(?:REDACTED_[A-Z0-9_]+|user_[A-Za-z]+@example\.com|10\.0\.\d{1,3}\.\d{1,3}|2001:db8::[0-9a-fA-F]+|00:00:5E:00:53:[0-9a-fA-F]{2}|(?:urluser|localuser)_\d+|\+1-555-01\d{2}|50000\d{5}|4111-1111-1111-\d{4}|000-12-\d{4}|9999\s?0000\s?\d{4}|[A-Z]{5}[0-9]{4}[A-Z]|host_[A-Za-z0-9_.-]+\.example\.internal|GB00TEST[0-9A-Z]{10})/g;
 
 export class Vault {
   constructor(options = {}) {
     this.realToPlaceholder = new Map();
     this.placeholderToReal = new Map();
+    this.aliases = new Map(); // aliasToken -> targetPlaceholder
 
     // Counters per namespace
     this.counters = {
       EMAIL: 0,
+      EMAIL_TAG: 1,
       URL_USER: 1,    // urluser_1, urluser_2
       LOCAL_USER: 1,  // localuser_1, localuser_2
       IPV4: 1,        // 10.0.0.1, 10.0.0.2
+      IP_TAG: 1,      // REDACTED_IP_1
       IPV6: 1,        // 2001:db8::1
       MAC: 1,         // 00:00:5E:00:53:01
       KEY: 1,         // REDACTED_KEY_1
@@ -31,11 +108,20 @@ export class Vault {
       GOOGLE_KEY: 1,  // REDACTED_GOOGLE_KEY_1
       JWT: 1,         // REDACTED_JWT_1
       US_PHONE: 100,  // +1-555-0100
+      PHONE_TAG: 1,   // REDACTED_PHONE_1
       INDIA_PHONE: 1, // 5000000001
       CREDIT_CARD: 0, // 4111-1111-1111-xxxx
+      CARD_TAG: 1,    // REDACTED_CARD_1
       SSN: 1,         // 000-12-0001
+      SSN_TAG: 1,     // REDACTED_SSN_1
       AADHAAR: 1,     // 9999 0000 0001
+      AADHAAR_TAG: 1, // REDACTED_AADHAAR_1
       PAN: 0,         // AAAAA0000A
+      PAN_TAG: 1,     // REDACTED_PAN_1
+      PASSPORT_TAG: 1,// REDACTED_PASSPORT_1
+      ACCOUNT_TAG: 1, // REDACTED_ACCOUNT_1
+      LICENSE_TAG: 1, // REDACTED_LICENSE_1
+      VOTER_ID_TAG: 1,// REDACTED_VOTER_ID_1
       HOST: 0,        // host_A.example.internal
       IBAN: 1,        // GB00TEST0000000001
       CUSTOM: 1
@@ -46,6 +132,7 @@ export class Vault {
 
     this.options = {
       autoExpireMinutes: options.autoExpireMinutes || 0,
+      placeholderStyles: { ...DEFAULT_PLACEHOLDER_STYLES, ...(options.placeholderStyles || {}) },
       ...options
     };
 
@@ -79,6 +166,7 @@ export class Vault {
   clear() {
     this.realToPlaceholder.clear();
     this.placeholderToReal.clear();
+    this.aliases.clear();
     this.sessionLiteralSet?.clear();
     this.sessionInputText = '';
     for (const key of Object.keys(this.counters)) {
@@ -93,28 +181,80 @@ export class Vault {
     this.lastActivity = Date.now();
   }
 
+  getPlaceholderStyle(type, category) {
+    if (this.options && this.options.placeholderStyles) {
+      if (this.options.placeholderStyles[type]) {
+        return this.options.placeholderStyles[type];
+      }
+      if (category && this.options.placeholderStyles[category]) {
+        return this.options.placeholderStyles[category];
+      }
+    }
+    return DEFAULT_PLACEHOLDER_STYLES[type] || (category ? DEFAULT_PLACEHOLDER_STYLES[category] : null) || 'TAG';
+  }
+
+  setPlaceholderStyles(styles = {}) {
+    this.options = this.options || {};
+    this.options.placeholderStyles = { ...(this.options.placeholderStyles || {}), ...styles };
+    this.lastActivity = Date.now();
+  }
+
+  addAlias(aliasToken, targetPlaceholder) {
+    if (!aliasToken || !targetPlaceholder) return;
+    this.aliases.set(aliasToken, targetPlaceholder);
+    this.lastActivity = Date.now();
+  }
+
+  getAliases() {
+    return Array.from(this.aliases.entries());
+  }
+
+  deleteAlias(aliasToken) {
+    const res = this.aliases.delete(aliasToken);
+    this.lastActivity = Date.now();
+    return res;
+  }
+
+  clearAliases() {
+    this.aliases.clear();
+    this.lastActivity = Date.now();
+  }
+
   getOrCreatePlaceholder(realValue, type = 'KEY', category = 'SECRETS', metadata = {}) {
     if (this.isExpired()) {
       this.clear();
     }
     this.lastActivity = Date.now();
 
-    // 1. Phone number normalization (so +91 98765 43210 and 09876543210 and 98765-43210 share 1 vault slot)
+    // 1. Phone number and Aadhaar normalization
     let lookupKey = realValue;
     if (type === 'INDIA_PHONE') {
       const digits10 = realValue.replace(/\D/g, '').slice(-10);
       lookupKey = `IN_PHONE_${digits10}`;
+    } else if (type === 'AADHAAR') {
+      const digits12 = realValue.replace(/\D/g, '');
+      lookupKey = `AADHAAR_${digits12}`;
     }
+
+    const style = (metadata && metadata.placeholderStyle) || this.getPlaceholderStyle(type, category);
 
     if (this.realToPlaceholder.has(lookupKey)) {
       const basePlaceholder = this.realToPlaceholder.get(lookupKey);
-      if (type === 'INDIA_PHONE') {
-        return this._formatIndiaPhone(basePlaceholder, realValue);
+      let placeholder = basePlaceholder;
+      if (style === 'FORMAT_VALID') {
+        if (type === 'INDIA_PHONE') {
+          placeholder = this._formatIndiaPhone(basePlaceholder, realValue);
+        } else if (type === 'AADHAAR') {
+          placeholder = this._formatAadhaar(basePlaceholder, metadata.separator);
+        }
       }
-      if (type === 'AADHAAR' && metadata.separator !== undefined) {
-        return this._formatAadhaar(basePlaceholder, metadata.separator);
-      }
-      return basePlaceholder;
+      this.placeholderToReal.set(placeholder, {
+        realValue,
+        type,
+        category,
+        createdAt: Date.now()
+      });
+      return placeholder;
     }
 
     // 2. Generate unique collision-free placeholder
@@ -132,7 +272,7 @@ export class Vault {
       }
     }
 
-    // Store mapping
+    // Store mapping - always store the canonical basePlaceholder in realToPlaceholder
     this.realToPlaceholder.set(lookupKey, basePlaceholder);
     if (lookupKey !== realValue) {
       this.realToPlaceholder.set(realValue, basePlaceholder);
@@ -145,33 +285,99 @@ export class Vault {
       createdAt: Date.now()
     });
 
-    if (type === 'INDIA_PHONE') {
-      const formatted = this._formatIndiaPhone(basePlaceholder, realValue);
-      // Also register formatted variant for reverse mapping
-      this.placeholderToReal.set(formatted, {
-        realValue,
-        type,
-        category,
-        createdAt: Date.now()
-      });
-      return formatted;
-    }
+    if (style === 'FORMAT_VALID') {
+      if (type === 'INDIA_PHONE') {
+        const formatted = this._formatIndiaPhone(basePlaceholder, realValue);
+        this.placeholderToReal.set(formatted, {
+          realValue,
+          type,
+          category,
+          createdAt: Date.now()
+        });
+        const raw10 = basePlaceholder.replace(/\D/g, '').slice(-10);
+        const first5 = raw10.slice(0, 5);
+        const last5 = raw10.slice(5);
+        this.placeholderToReal.set(`${first5} ${last5}`, { realValue, type, category, createdAt: Date.now() });
+        this.placeholderToReal.set(`${first5}-${last5}`, { realValue, type, category, createdAt: Date.now() });
+        this.placeholderToReal.set(`+91 ${first5} ${last5}`, { realValue, type, category, createdAt: Date.now() });
+        this.placeholderToReal.set(`+91-${first5}-${last5}`, { realValue, type, category, createdAt: Date.now() });
+        return formatted;
+      }
 
-    if (type === 'AADHAAR' && metadata.separator !== undefined) {
-      const formatted = this._formatAadhaar(basePlaceholder, metadata.separator);
-      this.placeholderToReal.set(formatted, {
-        realValue,
-        type,
-        category,
-        createdAt: Date.now()
-      });
-      return formatted;
+      if (type === 'AADHAAR') {
+        const formatted = this._formatAadhaar(basePlaceholder, metadata.separator);
+        this.placeholderToReal.set(formatted, {
+          realValue,
+          type,
+          category,
+          createdAt: Date.now()
+        });
+        const raw12 = basePlaceholder.replace(/\D/g, '');
+        const p1 = raw12.slice(0, 4);
+        const p2 = raw12.slice(4, 8);
+        const p3 = raw12.slice(8, 12);
+        this.placeholderToReal.set(`${p1} ${p2} ${p3}`, { realValue, type, category, createdAt: Date.now() });
+        this.placeholderToReal.set(`${p1}-${p2}-${p3}`, { realValue, type, category, createdAt: Date.now() });
+        this.placeholderToReal.set(raw12, { realValue, type, category, createdAt: Date.now() });
+        return formatted;
+      }
     }
 
     return basePlaceholder;
   }
 
   _generateCandidate(type, category, metadata) {
+    const style = (metadata && metadata.placeholderStyle) || this.getPlaceholderStyle(type, category);
+
+    // TAG style: uppercase ASCII letters, digits, underscores only, NO spaces or punctuation inside
+    if (style === 'TAG') {
+      switch (type) {
+        case 'AADHAAR':
+          return `REDACTED_AADHAAR_${this.counters.AADHAAR_TAG++}`;
+        case 'CREDIT_CARD':
+          return `REDACTED_CARD_${this.counters.CARD_TAG++}`;
+        case 'SSN':
+          return `REDACTED_SSN_${this.counters.SSN_TAG++}`;
+        case 'PAN':
+          return `REDACTED_PAN_${this.counters.PAN_TAG++}`;
+        case 'PASSPORT':
+          return `REDACTED_PASSPORT_${this.counters.PASSPORT_TAG++}`;
+        case 'BANK_ACCOUNT':
+        case 'ACCOUNT':
+        case 'IBAN':
+          return `REDACTED_ACCOUNT_${this.counters.ACCOUNT_TAG++}`;
+        case 'DRIVING_LICENSE':
+        case 'LICENSE':
+          return `REDACTED_LICENSE_${this.counters.LICENSE_TAG++}`;
+        case 'VOTER_ID':
+          return `REDACTED_VOTER_ID_${this.counters.VOTER_ID_TAG++}`;
+        case 'EMAIL':
+          return `REDACTED_EMAIL_${this.counters.EMAIL_TAG++}`;
+        case 'IPV4':
+        case 'IPV6':
+          return `REDACTED_IP_${this.counters.IP_TAG++}`;
+        case 'US_PHONE':
+        case 'INDIA_PHONE':
+        case 'PHONE':
+          return `REDACTED_PHONE_${this.counters.PHONE_TAG++}`;
+        case 'AWS_KEY':
+          return this.options.useTypedPlaceholders ? `REDACTED_AWS_KEY_${this.counters.AWS_KEY++}` : `REDACTED_KEY_${this.counters.KEY++}`;
+        case 'GITHUB_TOKEN':
+          return this.options.useTypedPlaceholders ? `REDACTED_GITHUB_TOKEN_${this.counters.GITHUB_TOKEN++}` : `REDACTED_KEY_${this.counters.KEY++}`;
+        case 'STRIPE_KEY':
+          return this.options.useTypedPlaceholders ? `REDACTED_STRIPE_KEY_${this.counters.STRIPE_KEY++}` : `REDACTED_KEY_${this.counters.KEY++}`;
+        case 'SLACK_TOKEN':
+          return this.options.useTypedPlaceholders ? `REDACTED_SLACK_TOKEN_${this.counters.SLACK_TOKEN++}` : `REDACTED_KEY_${this.counters.KEY++}`;
+        case 'GOOGLE_KEY':
+          return this.options.useTypedPlaceholders ? `REDACTED_GOOGLE_KEY_${this.counters.GOOGLE_KEY++}` : `REDACTED_KEY_${this.counters.KEY++}`;
+        case 'JWT':
+          return `REDACTED_JWT_${this.counters.JWT++}`;
+        default:
+          return `REDACTED_KEY_${this.counters.KEY++}`;
+      }
+    }
+
+    // FORMAT-VALID style
     switch (type) {
       case 'EMAIL': {
         const letter = indexToLetterSequence(this.counters.EMAIL++);
@@ -303,29 +509,34 @@ export class Vault {
   }
 
   _formatIndiaPhone(raw10Digits, originalText) {
-    const first5 = raw10Digits.slice(0, 5);
-    const last5 = raw10Digits.slice(5);
+    const digitsOnly = String(raw10Digits || '').replace(/\D/g, '').slice(-10);
+    const d = digitsOnly.padStart(10, '0');
+    const first5 = d.slice(0, 5);
+    const last5 = d.slice(5);
+    const orig = String(originalText || '');
 
-    if (originalText.startsWith('+91')) {
-      const sep = originalText.includes('-') ? '-' : (originalText.includes(' ') ? ' ' : '');
+    if (orig.startsWith('+91')) {
+      const sep = orig.includes('-') ? '-' : (orig.includes(' ') ? ' ' : '');
       return `+91 ${first5}${sep || ' '}${last5}`;
     }
-    if (originalText.startsWith('0')) {
-      return `0${first5}${originalText.includes('-') ? '-' : (originalText.includes(' ') ? ' ' : '')}${last5}`;
+    if (orig.startsWith('0')) {
+      return `0${first5}${orig.includes('-') ? '-' : (orig.includes(' ') ? ' ' : '')}${last5}`;
     }
-    if (originalText.includes('-')) {
+    if (orig.includes('-')) {
       return `${first5}-${last5}`;
     }
-    if (originalText.includes(' ')) {
+    if (orig.includes(' ')) {
       return `${first5} ${last5}`;
     }
-    return raw10Digits;
+    return d;
   }
 
   _formatAadhaar(raw12Digits, separator) {
-    const p1 = raw12Digits.slice(0, 4);
-    const p2 = raw12Digits.slice(4, 8);
-    const p3 = raw12Digits.slice(8, 12);
+    const digitsOnly = String(raw12Digits || '').replace(/\D/g, '');
+    const d = digitsOnly.padEnd(12, '0');
+    const p1 = d.slice(0, 4);
+    const p2 = d.slice(4, 8);
+    const p3 = d.slice(8, 12);
     const sep = separator !== undefined ? separator : ' ';
     return `${p1}${sep}${p2}${sep}${p3}`;
   }
@@ -372,6 +583,8 @@ export class Vault {
   toJSON() {
     return {
       entries: this.getAllEntries(),
+      realToPlaceholder: Array.from(this.realToPlaceholder.entries()),
+      aliases: Array.from(this.aliases.entries()),
       counters: { ...this.counters },
       lastActivity: this.lastActivity,
       options: { ...this.options }
@@ -392,13 +605,29 @@ export class Vault {
     }
     if (Array.isArray(json.entries)) {
       for (const item of json.entries) {
-        this.realToPlaceholder.set(item.realValue, item.placeholder);
         this.placeholderToReal.set(item.placeholder, {
           realValue: item.realValue,
           type: item.type,
           category: item.category,
           createdAt: item.createdAt || Date.now()
         });
+      }
+    }
+    if (Array.isArray(json.realToPlaceholder)) {
+      for (const [k, v] of json.realToPlaceholder) {
+        this.realToPlaceholder.set(k, v);
+      }
+    } else if (Array.isArray(json.entries)) {
+      for (const item of json.entries) {
+        const existing = this.realToPlaceholder.get(item.realValue);
+        if (!existing || item.placeholder.length < existing.length) {
+          this.realToPlaceholder.set(item.realValue, item.placeholder);
+        }
+      }
+    }
+    if (Array.isArray(json.aliases)) {
+      for (const [k, v] of json.aliases) {
+        this.aliases.set(k, v);
       }
     }
   }

@@ -82,6 +82,72 @@
       </div>
     </section>
 
+    <!-- SECTION: PLACEHOLDER STYLES PER CATEGORY (SECTION 3.A) -->
+    <section class="settings-card">
+      <h2>Placeholder Style Per Category</h2>
+      <p class="card-desc">Choose between opaque TAG style (recommended for sensitive government IDs and credentials to prevent AI safety filters from hallucinating or masking them) and FORMAT-VALID style.</p>
+      <div class="checkbox-grid">
+        <div class="form-row" style="flex-direction: column; align-items: flex-start; gap: 4px;">
+          <span class="label-title">Indian Aadhaar Number</span>
+          <span class="label-desc" style="font-size: 11.5px; color: var(--text-muted);">TAG: REDACTED_AADHAAR_1 · FORMAT-VALID: 9999 0000 0001</span>
+          <select id="styleAadhaar">
+            <option value="TAG" selected>TAG (Default - High AI Safety)</option>
+            <option value="FORMAT_VALID">FORMAT-VALID (4-4-4 Digits)</option>
+          </select>
+        </div>
+        <div class="form-row" style="flex-direction: column; align-items: flex-start; gap: 4px;">
+          <span class="label-title">US SSN & National IDs</span>
+          <span class="label-desc" style="font-size: 11.5px; color: var(--text-muted);">TAG: REDACTED_SSN_1 · FORMAT-VALID: 000-12-0001</span>
+          <select id="styleSsn">
+            <option value="TAG" selected>TAG (Default - High AI Safety)</option>
+            <option value="FORMAT_VALID">FORMAT-VALID (XXX-XX-XXXX)</option>
+          </select>
+        </div>
+        <div class="form-row" style="flex-direction: column; align-items: flex-start; gap: 4px;">
+          <span class="label-title">Credit & Debit Cards</span>
+          <span class="label-desc" style="font-size: 11.5px; color: var(--text-muted);">TAG: REDACTED_CARD_1 · FORMAT-VALID: 4111-1111-1111-0001</span>
+          <select id="styleCard">
+            <option value="TAG" selected>TAG (Default - High AI Safety)</option>
+            <option value="FORMAT_VALID">FORMAT-VALID (Luhn Valid)</option>
+          </select>
+        </div>
+        <div class="form-row" style="flex-direction: column; align-items: flex-start; gap: 4px;">
+          <span class="label-title">Indian PAN ID</span>
+          <span class="label-desc" style="font-size: 11.5px; color: var(--text-muted);">FORMAT-VALID: AAAAA1000A · TAG: REDACTED_PAN_1</span>
+          <select id="stylePan">
+            <option value="FORMAT_VALID" selected>FORMAT-VALID (Default)</option>
+            <option value="TAG">TAG (REDACTED_PAN_1)</option>
+          </select>
+        </div>
+        <div class="form-row" style="flex-direction: column; align-items: flex-start; gap: 4px;">
+          <span class="label-title">Email Addresses</span>
+          <span class="label-desc" style="font-size: 11.5px; color: var(--text-muted);">FORMAT-VALID: user_A@example.com · TAG: REDACTED_EMAIL_1</span>
+          <select id="styleEmail">
+            <option value="FORMAT_VALID" selected>FORMAT-VALID (Default)</option>
+            <option value="TAG">TAG (REDACTED_EMAIL_1)</option>
+          </select>
+        </div>
+        <div class="form-row" style="flex-direction: column; align-items: flex-start; gap: 4px;">
+          <span class="label-title">IP Addresses</span>
+          <span class="label-desc" style="font-size: 11.5px; color: var(--text-muted);">FORMAT-VALID: 10.0.0.1 · TAG: REDACTED_IP_1</span>
+          <select id="styleIp">
+            <option value="FORMAT_VALID" selected>FORMAT-VALID (Default)</option>
+            <option value="TAG">TAG (REDACTED_IP_1)</option>
+          </select>
+        </div>
+      </div>
+    </section>
+
+    <!-- SECTION: LLM INSTRUCTION HEADER TEMPLATE (SECTION 3.B) -->
+    <section class="settings-card">
+      <h2>LLM Instruction Header Template</h2>
+      <p class="card-desc">When "Add instruction line for the AI" is enabled in Sanitize, this line is prepended on copy to prevent AI chatbots from mutating placeholders.</p>
+      <div class="form-row" style="width: 100%;">
+        <textarea id="instructionTemplateText" rows="3" style="width: 100%; font-family: var(--font-mono); font-size: 12px; padding: 8px;" placeholder="Note: tokens like {TOKENS} are intentional anonymization placeholders. Keep them exactly as written in your answer; do not mask, reformat, explain or replace them."></textarea>
+      </div>
+      <p class="card-desc" style="font-size: 11px; margin-top: 4px;">Use <code>{TOKENS}</code> as the placeholder for the specific tokens issued in your text.</p>
+    </section>
+
     <!-- SECTION 2: DETECTION SENSITIVITY -->
     <section class="settings-card">
       <h2>Detection Sensitivity</h2>

@@ -85,11 +85,10 @@
         </div>
         <div class="editor-container">
           <div id="rawInputBackdrop" class="editor-backdrop" aria-hidden="true"></div>
-          <textarea id="rawInput" placeholder="Paste sensitive text, database URLs, emails, stack traces, or API keys here..." spellcheck="false"></textarea>
+          <textarea id="rawInput" placeholder="Paste sensitive logs, API keys, emails, IPs, PAN, Aadhaar, passwords or tokens here..." spellcheck="false"></textarea>
         </div>
       </div>
 
-      <!-- Action Bar -->
       <div class="action-bar">
         <button id="sanitizeBtn" class="btn-primary">
           <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true">
@@ -99,13 +98,23 @@
         </button>
       </div>
 
+      <!-- Optional Instruction Line for the AI -->
+      <div class="instruction-toggle-container">
+        <label class="toggle-switch-label" for="addInstructionToggle">
+          <input type="checkbox" id="addInstructionToggle">
+          <span class="toggle-slider"></span>
+          <span class="toggle-label-text">Add instruction line for the AI</span>
+        </label>
+        <span id="instructionHint" class="instruction-hint hidden">💡 Turn this ON if your AI chatbot rewrote placeholders earlier.</span>
+      </div>
+
       <!-- Residual Scan Banner (CASE 12) -->
       <div id="residualAlert" class="residual-banner hidden" role="alert"></div>
 
       <!-- Sanitized Output Section -->
       <div class="field-group">
         <div class="field-header">
-          <label for="sanitizedOutput">Output (Sanitized format-valid dummy tokens)</label>
+          <label for="sanitizedOutput">Output (Sanitized format-preserving dummy tokens)</label>
           <div class="field-actions">
             <button id="copySanitizedBtn" class="icon-btn-sm copy-btn" title="Copy sanitized text" aria-label="Copy sanitized text">
               <svg class="copy-icon" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true">
@@ -126,6 +135,26 @@
 
     <!-- TAB 2: REVERSE MAP -->
     <main id="reverseTab" class="tab-content" role="tabpanel">
+      <!-- Round-trip Health Check Strip -->
+      <div id="healthCheckStrip" class="health-strip hidden" role="region" aria-live="polite">
+        <div class="health-strip-summary">
+          <span id="healthIssued" class="health-stat">Issued 0</span> ·
+          <span id="healthFound" class="health-stat">Found 0</span> ·
+          <span id="healthRestored" class="health-stat">Restored 0</span> ·
+          <span id="healthMissing" class="health-stat stat-amber">Missing 0</span> ·
+          <span id="healthUnrecognized" class="health-stat stat-red">Unrecognized 0</span>
+        </div>
+        <div id="healthDetailsContainer" class="health-details"></div>
+      </div>
+
+      <!-- Unrecognized Redaction Tokens Section -->
+      <div id="unrecognizedTokensSection" class="unrecognized-section hidden">
+        <div class="unrecognized-header">
+          <span class="unrecognized-title">⚠️ Unrecognized Redaction Tokens (AI may have rewritten placeholders)</span>
+        </div>
+        <div id="unrecognizedTokensList" class="unrecognized-list"></div>
+      </div>
+
       <div class="field-group">
         <div class="field-header">
           <div class="field-label-group">
@@ -214,6 +243,50 @@
           </tbody>
         </table>
       </div>
+
+      <!-- Session Aliases Table -->
+      <div class="aliases-section">
+        <div class="aliases-header">
+          <div>
+            <span class="vault-heading">Session Aliases (AI Rewritten Tokens)</span>
+            <p class="vault-subheading">Remembered mappings for mutated tokens confirmed in this session.</p>
+          </div>
+          <button id="clearAliasesBtn" class="btn-sm btn-secondary">Clear Aliases</button>
+        </div>
+        <div class="vault-table-wrapper">
+          <table class="vault-table">
+            <thead>
+              <tr>
+                <th>AI Mutated Token</th>
+                <th>Target Vault Placeholder</th>
+                <th>Action</th>
+              </tr>
+            </thead>
+            <tbody id="aliasesTableBody">
+              <tr>
+                <td colspan="3" class="empty-cell">No active session aliases.</td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+      </div>
+
+      <!-- Diagnostic: Test with my AI -->
+      <div class="diagnostic-section">
+        <div class="diagnostic-header">
+          <div>
+            <span class="vault-heading">Diagnostic: Test with my AI</span>
+            <p class="vault-subheading">Generate sample tokens to test your chatbot's safety rewriting behavior.</p>
+          </div>
+          <button id="generateAiTestBlockBtn" class="btn-secondary">Generate Test Prompt</button>
+        </div>
+        <div id="aiTestBlockContainer" class="ai-test-container hidden">
+          <textarea id="aiTestPromptText" readonly rows="4"></textarea>
+          <div class="ai-test-actions">
+            <button id="copyAiTestPromptBtn" class="btn-primary btn-sm">Copy Test Prompt</button>
+          </div>
+        </div>
+      </div>
     </main>
 
     <!-- Persistent Honest Limitation Warning -->
@@ -223,6 +296,26 @@
       </svg>
       <span>Automated detection can miss things. Review before sending.</span>
     </footer>
+  </div>
+
+  <!-- Assisted Manual Mapping Popover Modal -->
+  <div id="mappingPopoverModal" class="modal-overlay hidden" role="dialog" aria-modal="true" aria-labelledby="mappingModalTitle">
+    <div class="modal-card">
+      <div class="modal-header">
+        <h3 id="mappingModalTitle">Map Unrecognized Redaction Token</h3>
+        <button id="closeMappingModalBtn" class="icon-btn-sm" aria-label="Close modal">&times;</button>
+      </div>
+      <div class="modal-body">
+        <p class="modal-desc">
+          The AI response used token <strong id="popoverTokenLabel" class="hl-token"></strong> (inferred category: <span id="popoverCategoryLabel" class="badge-cat"></span>). Select which vault entry it maps to:
+        </p>
+        <div id="popoverCandidatesList" class="popover-candidates"></div>
+      </div>
+      <div class="modal-footer">
+        <button id="cancelMappingBtn" class="btn-secondary">Cancel</button>
+        <button id="confirmMappingBtn" class="btn-primary" disabled>Restore & Save Alias</button>
+      </div>
+    </div>
   </div>
 
   <!-- Accessible Toast & Live Announcement -->

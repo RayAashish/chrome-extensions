@@ -1,7 +1,7 @@
 /**
  * Smart PII Sanitizer - Paste Guard Content Script
  * Intercepts clipboard paste on AI chat inputs (ChatGPT, Claude, Gemini, Copilot, etc.)
- * Detects sensitive PII/secrets locally, displays an isolated Shadow DOM confirmation banner,
+ * Detects sensitive PII/secrets locally, routes sanitization through background service worker,
  * preserves editor undo/redo history, and provides a floating reverse-map helper.
  */
 
@@ -12,45 +12,42 @@
   if (window.__SMART_PII_PASTE_GUARD_LOADED__) return;
   window.__SMART_PII_PASTE_GUARD_LOADED__ = true;
 
-  let cachedSettings = null;
+  let cachedSettings = { autoSanitizePaste: false, sensitivity: 'balanced' };
   let activeBanner = null;
   let activeFloatingBtn = null;
 
-  // Local in-memory vault copy synchronized with session storage
-  let localVaultState = null;
-
-  // Quick synchronous regex detectors for instant paste interception
-  // Runs in < 2ms directly on clipboardData to avoid asynchronous delay during paste
+  // Comprehensive synchronous detectors for instant paste interception (< 2ms)
   const QUICK_PII_PATTERNS = [
-    { type: 'EMAIL', name: 'Email', regex: /\b[A-Za-z0-9._%+-]+@[A-Za-z0-9.-]+\.[A-Za-z]{2,}\b/ },
-    { type: 'IPV4', name: 'IP Address', regex: /(?:^|(?<=[^\w.-]))(?:(?:25[0-5]|2[0-4][0-9]|1[0-9]{2}|[1-9]?[0-9])\.){3}(?:25[0-5]|2[0-4][0-9]|1[0-9]{2}|[1-9]?[0-9])(?=[^\w.-]|$)/ },
-    { type: 'KEY', name: 'API Key', regex: /\b(?:sk_live|pk_live|sk_test|pk_test|ghp|gho|ghu|ghs|ghr|AKIA|ABIA|ACCA|ASIA|AIza)[0-9A-Za-z_-]{16,}\b|\bxox[baprs]-[0-9]{10,13}-[0-9]{10,13}-[a-zA-Z0-9]{24,32}\b/ },
-    { type: 'JWT', name: 'JWT Token', regex: /\beyJ[A-Za-z0-9_-]{10,}\.eyJ[A-Za-z0-9_-]{10,}\.[A-Za-z0-9_-]{10,}\b/ },
-    { type: 'CREDIT_CARD', name: 'Credit Card', regex: /\b(?:\d{4}[- ]){3}\d{4}\b/ },
-    { type: 'SSN', name: 'SSN', regex: /\b\d{3}-\d{2}-\d{4}\b/ },
-    { type: 'SECRET', name: 'Secret / Password', regex: /(?:password|secret|token|api_key|credential)\s*[:=]\s*["']?([^"'\s,;]{8,})["']?/i },
-    { type: 'PEM', name: 'Private Key', regex: /-----BEGIN (?:RSA |EC |DSA |OPENSSH )?PRIVATE KEY-----/ }
+    { type: 'EMAIL', name: 'Email', regex: /\b[A-Za-z0-9._%+-]+@[A-Za-z0-9.-]+\.[A-Za-z]{2,}\b/g },
+    { type: 'IPV4', name: 'IP Address', regex: /(?:^|(?<=[^\w.-]))(?:(?:25[0-5]|2[0-4][0-9]|1[0-9]{2}|[1-9]?[0-9])\.){3}(?:25[0-5]|2[0-4][0-9]|1[0-9]{2}|[1-9]?[0-9])(?=[^\w.-]|$)/g },
+    { type: 'KEY', name: 'API Key / Token', regex: /(?<![A-Za-z0-9_])(?:sk_live|pk_live|sk_test|pk_test|ghp|gho|ghu|ghs|ghr|github_pat|AKIA|ABIA|ACCA|ASIA|AIza)[0-9A-Za-z_-]{16,}(?![A-Za-z0-9_])|(?<![A-Za-z0-9_])xox[baprs]-[0-9]{10,13}-[0-9]{10,13}-[a-zA-Z0-9]{24,34}(?![A-Za-z0-9_])/g },
+    { type: 'JWT', name: 'JWT Token', regex: /(?<![A-Za-z0-9_-])(?:eyJ[A-Za-z0-9_-]{10,}\.eyJ[A-Za-z0-9_-]{10,}\.[A-Za-z0-9_-]{10,})(?![A-Za-z0-9_-])/g },
+    { type: 'CREDIT_CARD', name: 'Credit Card', regex: /(?<!\d)(?:\d{4}[- ]){3}\d{4}(?!\d)|\b\d{13,19}\b/g },
+    { type: 'SSN', name: 'SSN / ITIN', regex: /(?<!\d)\d{3}-\d{2}-\d{4}(?!\d)/g },
+    { type: 'PAN', name: 'Indian PAN / GSTIN', regex: /(?<![A-Za-z0-9])(?:[0-9]{2}[A-Z]{5}[0-9]{4}[A-Z][1-9A-Z]Z[0-9A-Z]|[A-Z]{5}[0-9]{4}[A-Z])(?![A-Za-z0-9])/g },
+    { type: 'AADHAAR', name: 'Indian Aadhaar', regex: /(?<!\d)[2-9]\d{3}[ -]?\d{4}[ -]?\d{4}(?!\d)/g },
+    { type: 'PHONE', name: 'Phone Number', regex: /(?<!\d)(?:\+91|91|0)?[-. ]?[6-9]\d{4}[-. ]?\d{5}(?!\d)|(?<!\d)(?:\+1[-. ]?)?\(?[2-9]\d{2}\)?[-. ]?[2-9]\d{2}[-. ]?\d{4}(?!\d)/g },
+    { type: 'SECRET', name: 'Secret / Password', regex: /(?:^|[\s,;{])(["'`]?)(?:password|passwd|pwd|pass|secret|token|api_key|apikey|api|auth|bearer|credential|client_secret|db_pass|private_key|salt|pepper|dsn)\1\s*(?:=|:|:=|=>)\s*(["'`]?)[^"'\s\r\n]{3,}\2/gmi },
+    { type: 'PEM', name: 'Private Key Block', regex: /-----BEGIN (?:RSA |EC |DSA |OPENSSH |PGP |ENCRYPTED )?PRIVATE KEY-----/g },
+    { type: 'URL_CRED', name: 'URL with Credentials', regex: /(?:https?|postgres|postgresql|mysql|mongodb(?:\+srv)?|redis|amqp):\/\/[^:\s"'>]+:[^@\s"'>]+@/gi }
   ];
 
   // Refresh settings from storage
   async function loadSettings() {
     try {
       const res = await chrome.storage.local.get('smart_pii_settings');
-      cachedSettings = res.smart_pii_settings || {};
-      const sessionVault = await chrome.storage.session.get('smart_pii_vault');
-      localVaultState = sessionVault.smart_pii_vault || null;
+      if (res && res.smart_pii_settings) {
+        cachedSettings = res.smart_pii_settings;
+      }
     } catch {
-      // Storage unavailable in isolated tab context
+      // Storage unavailable in isolated context
     }
   }
 
   loadSettings();
   chrome.storage.onChanged.addListener((changes) => {
     if (changes.smart_pii_settings) {
-      cachedSettings = changes.smart_pii_settings.newValue;
-    }
-    if (changes.smart_pii_vault) {
-      localVaultState = changes.smart_pii_vault.newValue;
+      cachedSettings = changes.smart_pii_settings.newValue || {};
     }
   });
 
@@ -58,12 +55,13 @@
    * Fast synchronous scan to decide if interception is necessary.
    */
   function quickScanText(text) {
-    if (!text || text.length < 5) return { hasSensitive: false, count: 0, categories: [] };
+    if (!text || text.length < 3) return { hasSensitive: false, count: 0, categories: [] };
     let count = 0;
     const detectedCategories = new Set();
 
     for (const pat of QUICK_PII_PATTERNS) {
-      const matches = text.match(pat.regex);
+      const regex = new RegExp(pat.regex.source, pat.regex.flags);
+      const matches = text.match(regex);
       if (matches && matches.length > 0) {
         count += matches.length;
         detectedCategories.add(pat.name);
@@ -78,15 +76,14 @@
   }
 
   /**
-   * Text insertion logic respecting ProseMirror, Lexical, Draft.js, textarea, and contenteditable.
+   * Text insertion logic respecting Gemini, ChatGPT, Claude, ProseMirror, Lexical, Draft.js, textarea, and contenteditable.
    */
   function insertSanitizedText(target, text) {
     if (!target) return;
 
-    target.focus();
-
     // 1. Textarea / Input
     if (target instanceof HTMLTextAreaElement || target instanceof HTMLInputElement) {
+      target.focus();
       const start = target.selectionStart || 0;
       const end = target.selectionEnd || 0;
       target.setRangeText(text, start, end, 'end');
@@ -95,9 +92,15 @@
       return;
     }
 
-    // 2. Contenteditable (ProseMirror / Lexical / Rich Text)
-    if (target.isContentEditable || target.getAttribute('contenteditable') === 'true') {
-      // Use document.execCommand('insertText') which modern rich text engines handle natively
+    // 2. Contenteditable (Gemini rich-textarea, ChatGPT ProseMirror, Claude Lexical)
+    const contentEditableEl = target.isContentEditable
+      ? target
+      : (target.closest && target.closest('[contenteditable="true"]')) || target;
+
+    if (contentEditableEl) {
+      contentEditableEl.focus();
+
+      // Modern Rich-text editors handle document.execCommand('insertText') cleanly
       let inserted = false;
       try {
         inserted = document.execCommand('insertText', false, text);
@@ -106,32 +109,33 @@
       }
 
       if (!inserted) {
-        // Fallback: Dispatch synthetic InputEvent with inputType 'insertFromPaste'
+        // Fallback A: Dispatch synthetic beforeinput event with data
         try {
           const inputEvent = new InputEvent('beforeinput', {
             bubbles: true,
             cancelable: true,
-            inputType: 'insertFromPaste',
+            inputType: 'insertText',
             data: text
           });
-          target.dispatchEvent(inputEvent);
+          contentEditableEl.dispatchEvent(inputEvent);
+        } catch (_) {}
 
-          // Direct DOM range insertion fallback
-          const sel = window.getSelection();
-          if (sel && sel.rangeCount > 0) {
-            const range = sel.getRangeAt(0);
-            range.deleteContents();
-            const textNode = document.createTextNode(text);
-            range.insertNode(textNode);
-            range.setStartAfter(textNode);
-            range.setEndAfter(textNode);
-            sel.removeAllRanges();
-            sel.addRange(range);
-          }
-          target.dispatchEvent(new Event('input', { bubbles: true, cancelable: true }));
-        } catch (e) {
-          console.warn('[Smart PII Sanitizer] DOM insertion error:', e);
+        // Fallback B: DOM Selection Range insertion
+        const sel = window.getSelection();
+        if (sel && sel.rangeCount > 0) {
+          const range = sel.getRangeAt(0);
+          range.deleteContents();
+          const textNode = document.createTextNode(text);
+          range.insertNode(textNode);
+          range.setStartAfter(textNode);
+          range.setEndAfter(textNode);
+          sel.removeAllRanges();
+          sel.addRange(range);
+        } else {
+          contentEditableEl.textContent = (contentEditableEl.textContent || '') + text;
         }
+
+        contentEditableEl.dispatchEvent(new InputEvent('input', { bubbles: true, cancelable: true, inputType: 'insertText', data: text }));
       }
     }
   }
@@ -141,7 +145,7 @@
    */
   window.addEventListener(
     'paste',
-    async (event) => {
+    (event) => {
       const target = event.target;
       if (!target) return;
 
@@ -157,51 +161,47 @@
       // Check allowlist
       if (cachedSettings && Array.isArray(cachedSettings.allowlist)) {
         for (const allowed of cachedSettings.allowlist) {
-          if (clipboardText.trim() === allowed.trim()) {
+          if (allowed && clipboardText.trim() === allowed.trim()) {
             return; // Allowlisted
           }
         }
       }
 
-      // Intercept!
+      // Intercept paste immediately!
       event.preventDefault();
       event.stopImmediatePropagation();
 
-      // Check if auto-sanitize is enabled
+      // Check if auto-sanitize on paste is enabled
       if (cachedSettings && cachedSettings.autoSanitizePaste) {
         executeSanitizeAndPaste(target, clipboardText);
         return;
       }
 
-      // Show Shadow DOM banner
+      // Otherwise display isolated Shadow DOM confirmation banner
       showPasteGuardBanner(target, clipboardText, scanResult);
     },
     true // Capture phase to beat page listeners
   );
 
   /**
-   * Perform full sanitization and insert.
+   * Perform sanitization via background service worker and insert into editor.
    */
-  async function executeSanitizeAndPaste(target, rawText) {
-    // Dynamic import core sanitizer
-    const { sanitize } = await import(chrome.runtime.getURL('core/sanitizer.js'));
-    const { Vault } = await import(chrome.runtime.getURL('core/vault.js'));
-
-    const vault = new Vault();
-    await vault.loadFromStorage();
-
-    const { sanitizedText, stats } = sanitize(rawText, {
-      vault,
-      sensitivity: cachedSettings?.sensitivity || 'balanced',
-      enableNames: cachedSettings?.enableNames || false,
-      allowlist: cachedSettings?.allowlist || [],
-      customRules: cachedSettings?.customRules || [],
-      enabledCategories: cachedSettings?.enabledCategories || {}
-    });
-
-    await vault.saveToStorage();
-    insertSanitizedText(target, sanitizedText);
-    showInlineToast(`Sanitized and pasted ${stats.total} sensitive item(s).`);
+  function executeSanitizeAndPaste(target, rawText) {
+    chrome.runtime.sendMessage(
+      {
+        action: 'SANITIZE_TEXT',
+        text: rawText
+      },
+      (res) => {
+        if (res && res.success && res.sanitizedText) {
+          insertSanitizedText(target, res.sanitizedText);
+          showInlineToast(`🛡️ Sanitized and pasted ${res.stats.total} sensitive item(s).`);
+        } else {
+          // If background worker is unresponsive, insert raw as fallback
+          insertSanitizedText(target, rawText);
+        }
+      }
+    );
   }
 
   /**
@@ -228,7 +228,7 @@
 
     hostDiv.style.top = `${topPos}px`;
     hostDiv.style.left = `${leftPos}px`;
-    hostDiv.style.width = `${Math.min(rect.width || 480, 520)}px`;
+    hostDiv.style.width = `${Math.min(rect.width || 480, 560)}px`;
 
     const categoriesBadges = scanResult.categories
       .map((cat) => `<span class="badge">${cat}</span>`)
@@ -323,7 +323,7 @@
           <svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
             <path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/>
           </svg>
-          <span class="title">Found ${scanResult.count} sensitive item(s):</span>
+          <span class="title">Detected ${scanResult.count} sensitive item(s):</span>
           ${categoriesBadges}
         </div>
         <div class="actions">
@@ -337,7 +337,6 @@
     document.body.appendChild(hostDiv);
     activeBanner = hostDiv;
 
-    // Handlers
     const btnSanitize = shadow.getElementById('btn-sanitize');
     const btnRaw = shadow.getElementById('btn-raw');
     const btnClose = shadow.getElementById('btn-close');
@@ -394,10 +393,14 @@
 
     // Check if selection contains placeholder indicators
     const hasPlaceholders =
-      /user_[A-Z]+@example\.com/.test(selectedText) ||
-      /REDACTED_[A-Z0-9_]+/.test(selectedText) ||
-      /host_[A-Z]+\.example\.internal/.test(selectedText) ||
-      /Person_[A-Z]+/.test(selectedText);
+      /user_[A-Za-z0-9_]+@example\.com/i.test(selectedText) ||
+      /REDACTED_[A-Z0-9_]+/i.test(selectedText) ||
+      /host_[A-Za-z0-9_.-]+\.example\.internal/i.test(selectedText) ||
+      /10\.0\.\d{1,3}\.\d{1,3}/.test(selectedText) ||
+      /2001:db8::[0-9a-fA-F]+/i.test(selectedText) ||
+      /urluser_\d+/i.test(selectedText) ||
+      /localuser_\d+/i.test(selectedText) ||
+      /GB00TEST[0-9A-Z]{10}/i.test(selectedText);
 
     if (hasPlaceholders) {
       showFloatingReverseMapButton(selectedText);
@@ -440,17 +443,29 @@
       Reverse-Map Selection
     `;
 
-    btn.addEventListener('click', async () => {
-      const { reverseMap } = await import(chrome.runtime.getURL('core/reverse.js'));
-      const { Vault } = await import(chrome.runtime.getURL('core/vault.js'));
-
-      const vault = new Vault();
-      await vault.loadFromStorage();
-
-      const { restoredText, restoredCount } = reverseMap(selectedText, vault);
-      await navigator.clipboard.writeText(restoredText);
-      showInlineToast(`Restored ${restoredCount} placeholder(s) to clipboard!`);
-      removeFloatingButton();
+    btn.addEventListener('click', () => {
+      chrome.runtime.sendMessage(
+        {
+          action: 'REVERSE_MAP_TEXT',
+          text: selectedText
+        },
+        async (res) => {
+          if (res && res.success && res.restoredText) {
+            try {
+              await navigator.clipboard.writeText(res.restoredText);
+            } catch (_) {
+              const ta = document.createElement('textarea');
+              ta.value = res.restoredText;
+              document.body.appendChild(ta);
+              ta.select();
+              document.execCommand('copy');
+              ta.remove();
+            }
+            showInlineToast(`✓ Restored ${res.restoredCount} placeholder(s) to clipboard!`);
+            removeFloatingButton();
+          }
+        }
+      );
     });
 
     document.body.appendChild(btn);

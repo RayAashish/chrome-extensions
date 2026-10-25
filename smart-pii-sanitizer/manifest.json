@@ -13,9 +13,13 @@
     "storage",
     "sidePanel",
     "contextMenus",
-    "scripting"
+    "scripting",
+    "clipboardRead",
+    "clipboardWrite",
+    "offscreen",
+    "activeTab"
   ],
-  "optional_host_permissions": [
+  "host_permissions": [
     "https://chatgpt.com/*",
     "https://*.claude.ai/*",
     "https://gemini.google.com/*",
@@ -23,6 +27,30 @@
     "https://www.perplexity.ai/*",
     "https://chat.deepseek.com/*",
     "https://grok.com/*"
+  ],
+  "content_scripts": [
+    {
+      "matches": [
+        "https://chatgpt.com/*",
+        "https://*.claude.ai/*",
+        "https://gemini.google.com/*",
+        "https://copilot.microsoft.com/*",
+        "https://www.perplexity.ai/*",
+        "https://chat.deepseek.com/*",
+        "https://grok.com/*"
+      ],
+      "js": ["content/paste-guard.js"],
+      "run_at": "document_start"
+    }
+  ],
+  "web_accessible_resources": [
+    {
+      "resources": [
+        "icons/*",
+        "core/*"
+      ],
+      "matches": ["<all_urls>"]
+    }
   ],
   "action": {
     "default_popup": "popup/popup.html",

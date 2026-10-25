@@ -1,0 +1,100 @@
+[2026-10-23 09:30:01] INFO  auth-service: User session initialized. Source IP: 192.168.1.1. Verified PAN: HONET6085M.
+[2026-10-23 09:30:03] DEBUG db-pool: Connection established using credential Milkhasing@123 from host 192.168.1.1.
+[2026-10-23 09:30:05] INFO  verification-pipeline: Linking Aadhaar [REDACTED_AADHAAR_MOCK] to profile HONET6085M.
+[2026-10-23 09:30:07] INFO  gateway-proxy: Forwarding request to downstream 192.168.1.1:443 with auth_token Milkhasing@123.
+[2026-10-23 09:30:09] INFO  kyc-worker: Record finalized: Aadhaar [REDACTED_AADHAAR_MOCK] with PAN HONET6085M.
+[2026-10-23 09:30:11] INFO  tax-verifier: Customer tax ID PAN=HONET6085M, status=ACTIVE.
+[2026-10-23 09:30:13] INFO  health-check: Cluster node alive at 192.168.1.1:8080.
+[2026-10-23 09:30:15] DEBUG kyc-worker: Matched identity record with document aadhar = [REDACTED_AADHAAR_MOCK].
+[2026-10-23 09:30:17] INFO  auth-service: User session initialized. Source IP: 192.168.1.1. Verified PAN: HONET6085M.
+[2026-10-23 09:30:19] DEBUG db-pool: Connection established using credential Milkhasing@123 from host 192.168.1.1.
+[2026-10-23 09:30:21] DEBUG vault-agent: Service secret password=Milkhasing@123 rotated for endpoint 192.168.1.1.
+[2026-10-23 09:30:23] INFO  gateway-proxy: Forwarding request to downstream 192.168.1.1:443 with auth_token Milkhasing@123.
+[2026-10-23 09:30:25] DEBUG compliance-service: Audit check pass for citizen aadhar: [REDACTED_AADHAAR_MOCK].
+[2026-10-23 09:30:27] INFO  tax-verifier: Customer tax ID PAN=HONET6085M, status=ACTIVE.
+[2026-10-23 09:30:29] INFO  health-check: Cluster node alive at 192.168.1.1:8080.
+[2026-10-23 09:30:31] DEBUG cache-worker: Cached auth credential Milkhasing@123 with TTL 3600s.
+[2026-10-23 09:30:33] INFO  verification-pipeline: Linking Aadhaar [REDACTED_AADHAAR_MOCK] to profile HONET6085M.
+[2026-10-23 09:30:35] DEBUG db-pool: Connection established using credential Milkhasing@123 from host 192.168.1.1.
+[2026-10-23 09:30:37] DEBUG vault-agent: Service secret password=Milkhasing@123 rotated for endpoint 192.168.1.1.
+[2026-10-23 09:30:39] INFO  gateway-proxy: Forwarding request to downstream 192.168.1.1:443 with auth_token Milkhasing@123.
+[2026-10-23 09:30:41] DEBUG session-manager: Validating token pass = Milkhasing@123 from remote 192.168.1.1.
+[2026-10-23 09:30:43] DEBUG kyc-worker: Matched identity record with document aadhar = [REDACTED_AADHAAR_MOCK].
+[2026-10-23 09:30:45] INFO  health-check: Cluster node alive at 192.168.1.1:8080.
+[2026-10-23 09:30:47] DEBUG cache-worker: Cached auth credential Milkhasing@123 with TTL 3600s.
+[2026-10-23 09:30:49] INFO  auth-service: User session initialized. Source IP: 192.168.1.1. Verified PAN: HONET6085M.
+[2026-10-23 09:30:51] DEBUG db-pool: Connection established using credential Milkhasing@123 from host 192.168.1.1.
+[2026-10-23 09:30:53] DEBUG compliance-service: Audit check pass for citizen aadhar: [REDACTED_AADHAAR_MOCK].
+[2026-10-23 09:30:55] INFO  gateway-proxy: Forwarding request to downstream 192.168.1.1:443 with auth_token Milkhasing@123.
+[2026-10-23 09:30:57] DEBUG session-manager: Validating token pass = Milkhasing@123 from remote 192.168.1.1.
+[2026-10-23 09:30:59] INFO  tax-verifier: Customer tax ID PAN=HONET6085M, status=ACTIVE.
+[2026-10-23 09:31:01] INFO  health-check: Cluster node alive at 192.168.1.1:8080.
+[2026-10-23 09:31:03] INFO  kyc-worker: Document status: PENDING_VERIFICATION for [REDACTED_AADHAAR_MOCK].
+[2026-10-23 09:31:05] INFO  auth-service: User session initialized. Source IP: 192.168.1.1. Verified PAN: HONET6085M.
+[2026-10-23 09:31:07] DEBUG db-pool: Connection established using credential Milkhasing@123 from host 192.168.1.1.
+[2026-10-23 09:31:09] DEBUG vault-agent: Service secret password=Milkhasing@123 rotated for endpoint 192.168.1.1.
+[2026-10-23 09:31:11] INFO  gateway-proxy: Forwarding request to downstream 192.168.1.1:443 with auth_token Milkhasing@123.
+[2026-10-23 09:31:13] DEBUG session-manager: Validating token pass = Milkhasing@123 from remote 192.168.1.1.
+[2026-10-23 09:31:15] INFO  verification-pipeline: Linking Aadhaar [REDACTED_AADHAAR_MOCK] to profile HONET6085M.
+[2026-10-23 09:31:17] INFO  health-check: Cluster node alive at 192.168.1.1:8080.
+[2026-10-23 09:31:19] DEBUG cache-worker: Cached auth credential Milkhasing@123 with TTL 3600s.
+[2026-10-23 09:31:21] INFO  auth-service: User session initialized. Source IP: 192.168.1.1. Verified PAN: HONET6085M.
+[2026-10-23 09:31:23] DEBUG db-pool: Connection established using credential Milkhasing@123 from host 192.168.1.1.
+[2026-10-23 09:31:25] DEBUG kyc-worker: Matched identity record with document aadhar = [REDACTED_AADHAAR_MOCK].
+[2026-10-23 09:31:27] INFO  gateway-proxy: Forwarding request to downstream 192.168.1.1:443 with auth_token Milkhasing@123.
+[2026-10-23 09:31:29] DEBUG session-manager: Validating token pass = Milkhasing@123 from remote 192.168.1.1.
+[2026-10-23 09:31:31] INFO  tax-verifier: Customer tax ID PAN=HONET6085M, status=ACTIVE.
+[2026-10-23 09:31:33] INFO  health-check: Cluster node alive at 192.168.1.1:8080.
+[2026-10-23 09:31:35] DEBUG cache-worker: Cached auth credential Milkhasing@123 with TTL 3600s.
+[2026-10-23 09:31:37] INFO  vault-sync: Synced payload with uidai [REDACTED_AADHAAR_MOCK] securely.
+[2026-10-23 09:31:39] DEBUG db-pool: Connection established using credential Milkhasing@123 from host 192.168.1.1.
+[2026-10-23 09:31:41] DEBUG vault-agent: Service secret password=Milkhasing@123 rotated for endpoint 192.168.1.1.
+[2026-10-23 09:31:43] INFO  gateway-proxy: Forwarding request to downstream 192.168.1.1:443 with auth_token Milkhasing@123.
+[2026-10-23 09:31:45] DEBUG session-manager: Validating token pass = Milkhasing@123 from remote 192.168.1.1.
+[2026-10-23 09:31:47] INFO  kyc-worker: Record finalized: Aadhaar [REDACTED_AADHAAR_MOCK] with PAN HONET6085M.
+[2026-10-23 09:31:49] INFO  health-check: Cluster node alive at 192.168.1.1:8080.
+[2026-10-23 09:31:51] DEBUG cache-worker: Cached auth credential Milkhasing@123 with TTL 3600s.
+[2026-10-23 09:31:53] INFO  auth-service: User session initialized. Source IP: 192.168.1.1. Verified PAN: HONET6085M.
+[2026-10-23 09:31:55] DEBUG db-pool: Connection established using credential Milkhasing@123 from host 192.168.1.1.
+[2026-10-23 09:31:57] DEBUG vault-agent: Service secret password=Milkhasing@123 rotated for endpoint 192.168.1.1.
+[2026-10-23 09:31:59] INFO  kyc-worker: Document status: PENDING_VERIFICATION for [REDACTED_AADHAAR_MOCK].
+[2026-10-23 09:32:01] DEBUG session-manager: Validating token pass = Milkhasing@123 from remote 192.168.1.1.
+[2026-10-23 09:32:03] INFO  tax-verifier: Customer tax ID PAN=HONET6085M, status=ACTIVE.
+[2026-10-23 09:32:05] INFO  health-check: Cluster node alive at 192.168.1.1:8080.
+[2026-10-23 09:32:07] DEBUG cache-worker: Cached auth credential Milkhasing@123 with TTL 3600s.
+[2026-10-23 09:32:09] INFO  identity-gateway: Processing verification packet: PAN=HONET6085M, AADHAAR=[REDACTED_AADHAAR_MOCK].
+[2026-10-23 09:32:11] DEBUG db-pool: Connection established using credential Milkhasing@123 from host 192.168.1.1.
+[2026-10-23 09:32:13] DEBUG vault-agent: Service secret password=Milkhasing@123 rotated for endpoint 192.168.1.1.
+[2026-10-23 09:32:15] INFO  gateway-proxy: Forwarding request to downstream 192.168.1.1:443 with auth_token Milkhasing@123.
+[2026-10-23 09:32:17] DEBUG session-manager: Validating token pass = Milkhasing@123 from remote 192.168.1.1.
+[2026-10-23 09:32:19] INFO  tax-verifier: Customer tax ID PAN=HONET6085M, status=ACTIVE.
+[2026-10-23 09:32:21] DEBUG kyc-worker: Matched identity record with document aadhar = [REDACTED_AADHAAR_MOCK].
+[2026-10-23 09:32:23] DEBUG cache-worker: Cached auth credential Milkhasing@123 with TTL 3600s.
+[2026-10-23 09:32:25] INFO  auth-service: User session initialized. Source IP: 192.168.1.1. Verified PAN: HONET6085M.
+[2026-10-23 09:32:27] DEBUG db-pool: Connection established using credential Milkhasing@123 from host 192.168.1.1.
+[2026-10-23 09:32:29] DEBUG vault-agent: Service secret password=Milkhasing@123 rotated for endpoint 192.168.1.1.
+[2026-10-23 09:32:31] DEBUG compliance-service: Audit check pass for citizen aadhar: [REDACTED_AADHAAR_MOCK].
+[2026-10-23 09:32:33] DEBUG session-manager: Validating token pass = Milkhasing@123 from remote 192.168.1.1.
+[2026-10-23 09:32:35] INFO  tax-verifier: Customer tax ID PAN=HONET6085M, status=ACTIVE.
+[2026-10-23 09:32:37] INFO  health-check: Cluster node alive at 192.168.1.1:8080.
+[2026-10-23 09:32:39] DEBUG cache-worker: Cached auth credential Milkhasing@123 with TTL 3600s.
+[2026-10-23 09:32:41] INFO  auth-service: User session initialized. Source IP: 192.168.1.1. Verified PAN: HONET6085M.
+[2026-10-23 09:32:43] INFO  kyc-worker: Record finalized: Aadhaar [REDACTED_AADHAAR_MOCK] with PAN HONET6085M.
+[2026-10-23 09:32:45] DEBUG vault-agent: Service secret password=Milkhasing@123 rotated for endpoint 192.168.1.1.
+[2026-10-23 09:32:47] INFO  gateway-proxy: Forwarding request to downstream 192.168.1.1:443 with auth_token Milkhasing@123.
+[2026-10-23 09:32:49] DEBUG session-manager: Validating token pass = Milkhasing@123 from remote 192.168.1.1.
+[2026-10-23 09:32:51] INFO  tax-verifier: Customer tax ID PAN=HONET6085M, status=ACTIVE.
+[2026-10-23 09:32:53] INFO  verification-pipeline: Linking Aadhaar [REDACTED_AADHAAR_MOCK] to profile HONET6085M.
+[2026-10-23 09:32:55] DEBUG cache-worker: Cached auth credential Milkhasing@123 with TTL 3600s.
+[2026-10-23 09:32:57] INFO  auth-service: User session initialized. Source IP: 192.168.1.1. Verified PAN: HONET6085M.
+[2026-10-23 09:32:59] DEBUG db-pool: Connection established using credential Milkhasing@123 from host 192.168.1.1.
+[2026-10-23 09:33:01] DEBUG vault-agent: Service secret password=Milkhasing@123 rotated for endpoint 192.168.1.1.
+[2026-10-23 09:33:03] DEBUG kyc-worker: Matched identity record with document aadhar = [REDACTED_AADHAAR_MOCK].
+[2026-10-23 09:33:05] DEBUG session-manager: Validating token pass = Milkhasing@123 from remote 192.168.1.1.
+[2026-10-23 09:33:07] INFO  tax-verifier: Customer tax ID PAN=HONET6085M, status=ACTIVE.
+[2026-10-23 09:33:09] INFO  health-check: Cluster node alive at 192.168.1.1:8080.
+[2026-10-23 09:33:11] INFO  kyc-worker: Record finalized: Aadhaar [REDACTED_AADHAAR_MOCK] with PAN HONET6085M.
+[2026-10-23 09:33:13] INFO  auth-service: User session initialized. Source IP: 192.168.1.1. Verified PAN: HONET6085M.
+[2026-10-23 09:33:15] DEBUG db-pool: Connection established using credential Milkhasing@123 from host 192.168.1.1.
+[2026-10-23 09:33:17] DEBUG vault-agent: Service secret password=Milkhasing@123 rotated for endpoint 192.168.1.1.
+[2026-10-23 09:33:19] INFO  identity-gateway: Processing verification packet: PAN=HONET6085M, AADHAAR=[REDACTED_AADHAAR_MOCK].
