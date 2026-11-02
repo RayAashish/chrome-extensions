@@ -6,7 +6,7 @@ import { Vault } from '../core/vault.js';
 
 test('CASE 1: Secrets keyed by variable name are detected (FAIL in current code)', () => {
   const input = `api=asiuhfasuhd423l!
-password = Raysi@2002
+password = MySecretP@ssw0rd!
 api_key asodoji23
 client_secret: "s3cr3tValue"
 "auth_token":"abc123xyz"
@@ -16,7 +16,7 @@ export DB_PASS='p@ss w0rd'`;
   const { sanitizedText, stats } = sanitize(input, { vault });
 
   assert.ok(!sanitizedText.includes('asiuhfasuhd423l!'), 'api value must be redacted');
-  assert.ok(!sanitizedText.includes('Raysi@2002'), 'password value must be redacted');
+  assert.ok(!sanitizedText.includes('MySecretP@ssw0rd!'), 'password value must be redacted');
   assert.ok(!sanitizedText.includes('asodoji23'), 'api_key value must be redacted');
   assert.ok(!sanitizedText.includes('s3cr3tValue'), 'client_secret value must be redacted');
   assert.ok(!sanitizedText.includes('abc123xyz'), 'auth_token value must be redacted');
@@ -250,7 +250,7 @@ test('CASE 12: Missing data / stale output & residual scan', () => {
   const input = `email=rahul@acme.io
 phone=+91 98765 43210
 api=asiuhfasuhd423l!
-password=Raysi@2002
+password=MySecretP@ssw0rd!
 api_key asodoji23`;
 
   const { sanitizedText, residualFindings } = sanitize(input);
