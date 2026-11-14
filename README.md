@@ -1,102 +1,92 @@
-# Chrome Extensions & Local-First Web Tools
+# Chrome Extensions & Privacy-First Web Tools Suite
 
 <p align="center">
-  <em>A high-performance monorepo of zero-cloud browser extensions and client-side developer utilities engineered for privacy, security, and offline execution.</em>
+  <em>A production-ready monorepo of zero-cloud browser extensions and client-side web tools engineered for deterministic financial parsing, confidential LLM data sanitization, code extraction, and synchronized multi-viewport developer diagnostics.</em>
 </p>
 
 <p align="center">
   <img src="https://img.shields.io/badge/Status-Active-emerald?style=for-the-badge" alt="Status" />
-  <img src="https://img.shields.io/badge/Platform-Chrome%20MV3%20%7C%20Edge-blue?style=for-the-badge&logo=googlechrome&logoColor=white" alt="Platform" />
+  <img src="https://img.shields.io/badge/Platform-Chrome%20MV3%20%7C%20Web%20PWA-4285F4?style=for-the-badge&logo=googlechrome&logoColor=white" alt="Platform" />
   <img src="https://img.shields.io/badge/TypeScript-Strict-3178C6?style=for-the-badge&logo=typescript&logoColor=white" alt="TypeScript" />
-  <img src="https://img.shields.io/badge/Privacy-100%25%20On--Device-success?style=for-the-badge" alt="Privacy" />
-  <img src="https://img.shields.io/badge/License-MIT-orange?style=for-the-badge" alt="License" />
+  <img src="https://img.shields.io/badge/Security-Zero%20Network%20%7C%20100%25%20Local-10B981?style=for-the-badge&logo=shield&logoColor=white" alt="Security" />
+  <img src="https://img.shields.io/badge/License-MIT-blue?style=for-the-badge" alt="License" />
 </p>
 
 <p align="center">
   <a href="https://github.com/RayAashish/chrome-extensions/releases/tag/v2026.11.14">
-    <img src="https://img.shields.io/badge/Download-Latest%20Releases-25D366?style=for-the-badge&logo=github&logoColor=white" alt="Download Releases" />
+    <img src="https://img.shields.io/badge/Download-Release%20Bundles-25D366?style=for-the-badge&logo=googlechrome&logoColor=white" alt="Download Releases" />
   </a>
-  <a href="https://github.com/RayAashish/chrome-extensions/releases">
-    <img src="https://img.shields.io/badge/Packages-Zip%20Bundles-blue?style=for-the-badge&logo=googlechrome&logoColor=white" alt="Packages" />
+  <a href="https://github.com/RayAashish/chrome-extensions">
+    <img src="https://img.shields.io/badge/Live-GitHub%20Repository-blue?style=for-the-badge&logo=github&logoColor=white" alt="Live Repository" />
   </a>
 </p>
 
 ---
 
 ## Overview & Key Highlights
-
-Modern developer workflows demand responsive testing, sensitive data protection, code extraction, and financial parsing. However, traditional browser utilities often route confidential code, personal credentials, and private financial statements through untrusted cloud servers.
-
-This monorepo delivers four modular, production-ready developer tools built strictly on **local-first, zero-telemetry architecture**:
-
-- **Problem Statement:** Developers frequently expose sensitive API keys, customer PII, and financial data to external third parties when pasting code snippets into LLMs, converting bank statements, or debugging webhooks through remote proxy tunnels.
-- **Core Value Proposition:** 100% client-side computation. All tokenization, parsing, cryptography (Web Crypto AES-GCM/PBKDF2), and viewport synchronizations occur strictly within the browser memory and local host. Zero cloud logging, zero external analytics, and zero remote dependencies.
-
-### Feature Matrix
-
-| Suite Application | Core Engine | Primary Capability | Key Advantage |
-| :--- | :--- | :--- | :--- |
-| **CodeStripper** | TypeScript + Vite + JSZip | Distills code snippets & project skeletons from technical tutorials | One-click ZIP generation with deterministic language detection |
-| **Smart PII Sanitizer** | Web Crypto + Shadow DOM + Session Vault | Sanitizes PII & secrets before pasting into AI chats with reverse-mapping | Deterministic tokens, Luhn check, zero server communication |
-| **Localhost Multi-View & Webhook Inspector** | Declarative Net Request + SubtleCrypto | Multi-viewport responsive UI sync & local HMAC webhook simulation | Zero tunnel requirement, Stripe/GitHub HMAC validation, frame sync |
-| **Statement2Ledger** | Web Workers + PDF.js + SheetJS | Converts Indian bank statement PDFs/CSVs to audit-ready Excel ledgers | Pure client-side parsing, running-balance math reconciliation |
+- **Problem Statement:** Modern developer and financial workflows frequently leak private encryption keys, bearer tokens, customer PII (PAN, Aadhaar, SSN), and confidential bank statements to remote cloud servers and SaaS proxies. Developers also lose time manually distilling messy online tutorials and debugging non-synchronized responsive layouts across viewports.
+- **Core Value Proposition:** 100% on-device, client-side processing with zero cloud telemetry. All cryptographic operations (Web Crypto AES-GCM, HMAC-SHA256, PBKDF2), PDF parsing, regex redaction, and multi-viewport relays execute entirely within browser memory. No data ever leaves your computer.
+- **Feature Matrix:**
+  - **CodeStripper:** Extracts, categorizes, and compiles clean code snippets and configs from messy web tutorials into downloadable `.zip` project skeletons.
+  - **Smart PII Sanitizer:** Deterministically replaces sensitive credentials and PII with format-valid synthetic tokens before pasting into LLMs, featuring one-click reverse mapping.
+  - **Localhost Multi-View & Webhook Inspector:** Renders synchronized mobile, tablet, and desktop viewports side-by-side with scroll/click parity and generates signed local webhook dispatches (Stripe, GitHub, Shopify) without cloud tunnels.
+  - **Statement2Ledger:** Converts Indian bank statement PDFs and CSVs into standardized, audit-ready Excel ledgers completely offline with integer paise balance reconciliation.
 
 ---
 
 ## System Architecture & Workflow
 
 ### High-Level Architecture Diagram
-
 ```mermaid
-flowchart TD
-    subgraph BrowserContext["Browser & Host Environment"]
-        subgraph CodeStripperApp["CodeStripper (MV3)"]
-            DOMScraper["DOM Extractor & Cleaner"] --> ASTClassifier["Language & Path Classifier"]
-            ASTClassifier --> ZipGenerator["JSZip Project Builder"]
+graph TD
+    subgraph ClientEnvironment["100% Local Client Environment (Zero Cloud I/O)"]
+        subgraph CodeStripper["CodeStripper (Manifest V3)"]
+            CS_DOM["DOM Content Extractor"] --> CS_Class["Language & Path Classifier"]
+            CS_Class --> CS_Zip["JSZip Skeleton Generator"]
         end
 
-        subgraph PIISanitizerApp["Smart PII Sanitizer (MV3)"]
-            PasteListener["Capture-Phase Paste Interceptor"] --> ShadowPrompt["Shadow DOM Guard Modal"]
-            ShadowPrompt --> SanitizerEngine["Single-Pass Regex & Entity Tokenizer"]
-            SanitizerEngine <--> MemoryVault["Session Storage Vault & AES-GCM Encryptor"]
-            MemoryVault <--> ReverseMapper["Longest-Match Reverse Restorer"]
+        subgraph PIISanitizer["Smart PII Sanitizer (Manifest V3)"]
+            PII_Paste["Paste Event Capture Phase"] --> PII_Shadow["Shadow DOM Protection Prompt"]
+            PII_Shadow --> PII_Engine["Interval Overlap Sanitizer"]
+            PII_Engine <--> PII_Vault["Session Vault & AES-GCM Encryptor"]
+            PII_Vault <--> PII_Reverse["Longest-Match Reverse Mapper"]
         end
 
-        subgraph WebhookInspectorApp["Multi-View & Webhook Inspector"]
-            ParentWorkspace["Workspace Controller (Hub)"] <--> SyncRelay["Channel Token & Event Relay"]
-            SyncRelay <--> ViewportFrames["Synchronized IFrames (Mobile / Tablet / Desktop)"]
-            WebhookComposer["Local Request Composer"] --> SubtleCrypto["Web Crypto API (HMAC-SHA256)"]
-            SubtleCrypto --> LocalEndpoint["Localhost HTTP Dispatcher"]
+        subgraph WebhookInspector["Localhost Multi-View & Webhook Inspector"]
+            WH_Hub["Workspace Controller"] <--> WH_Relay["Channel Token Bus"]
+            WH_Relay <--> WH_Views["Synchronized Iframes (Mobile/Tablet/Desktop)"]
+            WH_Comp["Request Composer"] --> WH_Crypto["Web Crypto HMAC-SHA256"]
+            WH_Crypto --> WH_Local["Localhost HTTP Dispatcher"]
         end
 
-        subgraph StatementLedgerApp["Statement2Ledger (Offline PWA)"]
-            DropZone["PDF / CSV Ingestion"] --> WorkerThread["Dedicated Web Worker"]
-            WorkerThread --> PositionalPDF["PDF.js Positional Tokenizer"]
-            PositionalPDF --> RuleParsers["Bank Format Adapters (HDFC / SBI / ICICI)"]
-            RuleParsers --> MathReconciliation["Integer Paise Balance Validator"]
-            MathReconciliation --> SheetExporter["Audit-Ready Multi-Sheet XLSX"]
+        subgraph Statement2LedgerApp["Statement2Ledger (Offline Web App)"]
+            S2L_File["Bank PDF/CSV Dropzone"] --> S2L_Worker["Dedicated Web Worker Thread"]
+            S2L_Worker --> S2L_PDF["PDF.js Positional Layout Engine"]
+            S2L_PDF --> S2L_Bank["Bank Parser Adapters (HDFC/SBI/ICICI)"]
+            S2L_Bank --> S2L_Math["Integer Paise Math Validator"]
+            S2L_Math --> S2L_Export["Audit-Ready Multi-Sheet XLSX"]
         end
     end
 
-    LocalEndpoint --> LocalDevServer["Local Application Server (localhost:8080)"]
+    WH_Local --> LocalServer["Local App Server (localhost:8080)"]
 ```
 
 ### Component Breakdown
 
-#### ⚬ Presentation Layer
-- **Reactive UI Interfaces:** Built with tailored Tailwind CSS and modern CSS Grid/Flexbox layouts inside dedicated Chrome side panels (`chrome.sidePanel`), options tabs, and standalone offline pages.
-- **Isolated Injection Elements:** In-page warning banners and interaction pills (e.g., Smart PII Sanitizer) mount inside isolated **Closed Shadow DOM** roots to prevent CSS pollution or script tampering by host web applications.
-- **Dynamic Viewport Scaling:** Hardware-accelerated CSS transforms (`transform: scale()`) support responsive previews across multi-device configurations without altering iframe pixel densities.
+⚬ Presentation Layer:
+- **Tailwind CSS & Sidepanel Panes:** Extension views leverage `chrome.sidePanel`, options consoles, and standalone offline pages styled with clean, responsive Tailwind CSS layouts.
+- **Closed Shadow DOM Roots:** User-facing injection overlays (e.g. Paste Guard) mount inside closed Shadow DOM roots to prevent style bleed or DOM tampering by host web applications.
+- **Hardware-Accelerated Scaling:** Iframe viewports render with true CSS pixel densities and fit into desktop viewports via CSS `transform: scale()`.
 
-#### ⚬ Core Engine & Processing
-- **Deterministic Heuristic Classifiers:** Rule-based language syntax classification, line-number filtering, and automated file-extension inferencing.
-- **Web Worker Offloading:** CPU-intensive text tokenization and PDF canvas parsing run on isolated background threads via Web Workers, keeping user interfaces completely non-blocking.
-- **Integer Arithmetic Verification:** Strict mathematical reconciliation algorithms compute financial balances using whole integer paise to prevent IEEE 754 floating-point drift.
+⚬ Core Engine / Processing:
+- **Web Worker Threading:** Statement2Ledger delegates PDF rasterization and spatial clustering to background Web Workers, guaranteeing 60fps UI responsiveness.
+- **Deterministic Tokenization:** Smart PII Sanitizer uses priority interval conflict resolution (`resolveOverlaps`) to avoid nested entity collisions and Luhn checksum validation for card identification.
+- **Integer Paise Arithmetic:** Balance calculations avoid IEEE 754 floating-point errors by reconciling running totals using exact integer paise arithmetic.
 
-#### ⚬ Data & I/O
-- **Volatile In-Memory Vaults:** State management relies on `chrome.storage.session`, guaranteeing sensitive mapping tokens are wiped automatically when browser sessions conclude.
-- **Declarative Net Request Engine:** Dynamically injects and cleans HTTP headers strictly for loopback hosts (`127.0.0.1`, `localhost`), stripping restrictive frame-ancestor constraints during local responsive testing.
-- **Export Serialization:** File downloads (ZIP, XLSX, CSV, JSON) are assembled in client RAM via Blob constructors and triggered through native browser Object URLs.
+⚬ Data & I/O:
+- **Volatile Storage Lifecycles:** Temporary mapping tokens and decryption keys reside in `chrome.storage.session` and are purged automatically when the browser session ends.
+- **Declarative Net Request Engine:** The multi-view workspace dynamically manages session rules via `chrome.declarativeNetRequest` strictly for loopback origins (`localhost`, `127.0.0.1`), removing restrictive frame-ancestor headers for local preview without opening security holes for external sites.
+- **Client-Side Blob Exports:** All file outputs (ZIP, XLSX, CSV, JSON) are assembled purely in browser RAM via Blob URLs without intermediate disk or server hops.
 
 ---
 
@@ -104,45 +94,45 @@ flowchart TD
 
 ```text
 chrome-extensions/
-├── .env.example                               # Global configuration template
-├── .gitignore                                 # Comprehensive multi-layer exclusions
-├── README.md                                  # Monorepo architecture & specifications
+├── .env.example                               # Environment variable template
+├── .gitignore                                 # Multi-tier exclusion rules
+├── README.md                                  # Monorepo architectural documentation
 ├── code-stripper/                             # Tutorial to Project Skeleton Distiller
-│   ├── manifest.json                          # MV3 manifest definition
-│   ├── package.json                           # TypeScript & Vite tooling
+│   ├── manifest.json                          # Chrome Extension Manifest V3
+│   ├── package.json                           # Dependencies and build scripts
 │   ├── src/
-│   │   ├── background/index.ts                # Service worker & side panel controller
-│   │   ├── content/extractor.ts               # DOM traversal & code cleaner
-│   │   ├── core/classifier.ts                 # Heuristic syntax & path inference
-│   │   ├── core/zipBuilder.ts                 # JSZip archive compiler
-│   │   └── sidepanel/                         # Reactive UI sidepanel view
-│   └── test/                                  # Vitest unit test suites
-├── localhost-multiview-webhook-inspector/     # Responsive Multi-Viewport & Webhook Tester
+│   │   ├── background/index.ts                # Service worker & side panel triggers
+│   │   ├── content/extractor.ts               # DOM traversal & snippet extraction
+│   │   ├── core/classifier.ts                 # Heuristic syntax & language detection
+│   │   ├── core/zipBuilder.ts                 # In-memory JSZip project builder
+│   │   └── sidepanel/                         # Reactive side panel user interface
+│   └── test/                                  # Vitest unit test suite
+├── localhost-multiview-webhook-inspector/     # Multi-Viewport & Webhook Debugger
 │   ├── manifest.json                          # MV3 manifest with Declarative Net Request
-│   ├── background/service-worker.js           # Session rules & workspace management
-│   ├── companion/receiver.js                  # Standalone local hook listener
-│   ├── content/frame-agent.js                 # Viewport state & interaction mirror
-│   ├── devtools/                              # Chrome DevTools network inspector tab
-│   ├── shared/                                # Locator, protocol & device matrices
+│   ├── background/service-worker.js           # Session rules & frame lifecycle
+│   ├── companion/receiver.js                  # Standalone local webhook listener
+│   ├── content/frame-agent.js                 # Event normalization & sync agent
+│   ├── devtools/                              # Dedicated DevTools inspection tab
+│   ├── shared/                                # Locators, sync protocol, and device presets
 │   ├── webhooks/                              # HMAC simulation & payload templates
-│   └── workspace/                             # Multi-device canvas dashboard
-├── smart-pii-sanitizer/                       # Deterministic PII Redaction & Reverse Mapping
-│   ├── manifest.json                          # MV3 extension manifest
-│   ├── app.html                               # Standalone offline web utility
-│   ├── background/service-worker.js           # MV3 background worker
-│   ├── content/paste-guard.js                 # Capture-phase paste protector
+│   └── workspace/                             # Multi-device responsive grid canvas
+├── smart-pii-sanitizer/                       # PII Redaction & Reverse-Mapping Tool
+│   ├── manifest.json                          # Chrome Extension Manifest V3
+│   ├── app.html                               # Standalone offline web application
+│   ├── background/service-worker.js           # Ephemeral MV3 service worker
+│   ├── content/paste-guard.js                 # Capture-phase paste interception
 │   ├── core/                                  # Vault, Sanitizer, Detectors & Web Crypto
-│   ├── options/ & popup/ & sidepanel/         # Settings and interactive consoles
-│   └── test/                                  # Acceptance & regex performance tests
+│   ├── options/ & popup/ & sidepanel/         # Settings, toolbar & sidepanel consoles
+│   └── test/                                  # Acceptance, vault, and regex test suites
 └── statement2ledger/                          # Bank Statement to Excel Converter
     ├── index.html                             # Local web application entrypoint
-    ├── vite.config.ts                         # Client bundle configuration
+    ├── vite.config.ts                         # Vite client configuration
     ├── src/
     │   ├── core/                              # Narration parsing, categorization & math
     │   ├── export/                            # Multi-sheet XLSX & CSV generators
-    │   ├── parsers/                           # Bank-specific extraction adapters
+    │   ├── parsers/                           # HDFC, SBI, ICICI & generic bank adapters
     │   ├── ui/                                # Component views & password prompt modals
-    │   └── workers/parse.worker.ts            # Non-blocking PDF parsing thread
+    │   └── workers/parse.worker.ts            # Non-blocking PDF parsing worker thread
     └── tests/                                 # Unit, integration & fuzzing test suites
 ```
 
@@ -151,39 +141,39 @@ chrome-extensions/
 ## Getting Started & Local Setup
 
 ### Prerequisites
-- **Node.js:** v18.0.0 or higher (v20+ recommended)
-- **Package Manager:** `npm` v9+
-- **Browser:** Google Chrome (v116+ for SidePanel APIs), Microsoft Edge, or Chromium-based alternatives.
+
+⚬ **Node.js:** v18.0.0 or higher (v20+ recommended)  
+⚬ **Package Manager:** `npm` v9+ or `pnpm`  
+⚬ **Browser:** Google Chrome v116+ (or any Chromium browser supporting Manifest V3 Sidepanel & Offscreen APIs)  
+⚬ **Optional Tools:** GitHub CLI (`gh`) for automated release artifact deployment  
 
 ### Installation & Run
 
-1. **Clone the repository:**
+1. **Clone repository:**
    ```bash
    git clone https://github.com/RayAashish/chrome-extensions.git
    cd chrome-extensions
    ```
 
-2. **Configure environment template (if customizing ports):**
+2. **Environment configuration:**
    ```bash
    cp .env.example .env
    ```
 
-3. **Build the projects:**
+3. **Install dependencies & build applications:**
    ```bash
    # Build CodeStripper extension
-   cd code-stripper
-   npm install
-   npm run build
-   cd ..
+   cd code-stripper && npm install && npm run build && cd ..
 
-   # Build Statement2Ledger web application
-   cd statement2ledger
-   npm install
-   npm run build
-   cd ..
+   # Build Statement2Ledger web app
+   cd statement2ledger && npm install && npm run build && cd ..
+
+   # Statement2Ledger Local Development Server
+   cd statement2ledger && npm run dev
+   # Open http://localhost:5173 (Works fully with Wi-Fi turned OFF)
    ```
 
-4. **Run Unit Tests:**
+4. **Run monorepo test suites:**
    ```bash
    npm test --prefix code-stripper
    npm test --prefix statement2ledger
@@ -191,26 +181,27 @@ chrome-extensions/
    npm test --prefix smart-pii-sanitizer
    ```
 
-5. **Load Extensions into Chrome / Edge:**
-   - Navigate to `chrome://extensions/` (or `edge://extensions/`).
-   - Enable **Developer mode** toggle in the top-right corner.
-   - Click **Load unpacked**.
-   - Select any of the extension build directories:
-     - `code-stripper/dist`
-     - `smart-pii-sanitizer`
-     - `localhost-multiview-webhook-inspector`
+5. **Load extensions into Chrome or Edge:**
+   1. Open `chrome://extensions/` or `edge://extensions/`.
+   2. Turn on **Developer mode** in the upper-right corner.
+   3. Click **Load unpacked**.
+   4. Select the target project folder:
+      - `code-stripper/dist`
+      - `smart-pii-sanitizer`
+      - `localhost-multiview-webhook-inspector`
 
 ---
 
 ## Privacy, Permissions & Security
 
-- **Strict Local Execution:** All processes execute 100% within the browser process. No analytics, tracking pixels, or remote scripts are bundled.
-- **Volatile Vault Lifecycle:** Session tokens, encryption secrets, and bank statement buffers are held in memory-only storage contexts (`chrome.storage.session`) or ephemeral worker scopes. Wiped immediately upon tab or browser termination.
-- **Declarative Net Request Scoping:** DNR header adjustments are strictly scoped to sub-frame contexts targeting loopback hosts (`localhost`, `127.0.0.1`, `*.localhost`). Top-level network navigation and external domains remain entirely unaffected.
-- **No Third-Party Cloud CDN Dependencies:** All stylesheets, icons, fonts, and worker scripts (`pdf.worker.min.mjs`) are bundled locally to guarantee air-gapped, offline compliance.
+⚬ **Strict Scoped Storage & In-Memory Execution:** All application states, statement buffers, and redacted PII mappings are held exclusively in volatile memory (`chrome.storage.session` or Web Worker memory scopes) and are destroyed upon tab/session close.  
+⚬ **Zero Network Activity & No Cloud Logging:** Web applications enforce strict Content-Security-Policies (`connect-src 'none'`). All parsing, OCR extraction, and regex classification run locally.  
+⚬ **Scoped DNR Rules:** `declarativeNetRequest` header adjustments are strictly constrained to loopback origins (`localhost`, `127.0.0.1`, `*.localhost`) for subframe contexts only. Public network requests are never modified.  
+⚬ **Zero Third-Party Telemetry:** No analytics beacons, trackers, or remote fonts/scripts are present in the repository.
 
 ---
 
 ## License & Attribution
 
-This project is licensed under the **MIT License**. You are free to inspect, modify, and distribute the code in accordance with the license conditions.
+⚬ **License:** Distributed under the [MIT License](https://opensource.org/licenses/MIT).  
+⚬ **Attribution:** Built with open web standards (Web Crypto API, Web Workers, CSS Transforms, PDF.js, SheetJS, and Tailwind CSS).
