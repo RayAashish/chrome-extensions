@@ -1,17 +1,30 @@
+# ==========================================
 # Dependencies
+# ==========================================
 node_modules/
 .pnp
 .pnp.js
 
-# Build and distribution outputs
+# ==========================================
+# Build & Distribution Artifacts
+# ==========================================
 dist/
 build/
 out/
+target/
+.cxx/
+.gradle/
 *.zip
+*.tar.gz
+*.tgz
+*.apk
+*.aab
 *.crx
 *.xpi
 
-# Cache directories
+# ==========================================
+# Cache & Intermediate Files
+# ==========================================
 .cache/
 .vite/
 .vitest-cache/
@@ -19,7 +32,9 @@ out/
 .eslintcache
 .parcel-cache/
 
-# Logs
+# ==========================================
+# Logs & Diagnostic Dumps
+# ==========================================
 *.log
 npm-debug.log*
 yarn-debug.log*
@@ -27,19 +42,33 @@ yarn-error.log*
 pnpm-debug.log*
 lerna-debug.log*
 
-# Test coverage
+# ==========================================
+# Test Coverage
+# ==========================================
 coverage/
 *.lcov
 .nyc_output/
 
-# Environment files and credentials
+# ==========================================
+# Environment & Sensitive Credentials
+# ==========================================
 .env
-.env.local
-.env.*.local
+.env.*
+!.env.example
+local.properties
+google-services.json
+credentials.json
+id_rsa
+id_rsa.pub
 *.pem
 *.key
+*.jks
+*.keystore
+*.p12
 
-# Operating System files
+# ==========================================
+# Operating System & Filesystem
+# ==========================================
 .DS_Store
 .DS_Store?
 ._*
@@ -49,7 +78,9 @@ ehthumbs_vista.db
 Desktop.ini
 $RECYCLE.BIN/
 
-# IDEs and code editors
+# ==========================================
+# IDE & Code Editor Configurations
+# ==========================================
 .idea/
 .vscode/*
 !.vscode/settings.json
@@ -62,9 +93,13 @@ $RECYCLE.BIN/
 *.swo
 *~
 
-# Temporary and backup files
+# ==========================================
+# Temporary & Backup Files
+# ==========================================
 *.tmp
 *.bak
 
-# Ensure test fixtures are preserved
+# ==========================================
+# Whitelist Explicit Test Fixtures
+# ==========================================
 !**/fixtures/**
